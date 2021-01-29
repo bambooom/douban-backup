@@ -1,0 +1,21 @@
+{
+  "name": "douban-backup",
+  "version": "0.0.1",
+  "description": "script to handle douban backup",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "douban",
+    "backup",
+    "csv"
+  ],
+  "author": "zhuzi <nmz89825@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "fast-csv": "^4.3.6",
+    "lowdb": "^1.0.0",
+    "puppeteer": "^5.5.0"
+  }
+}
