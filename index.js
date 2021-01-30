@@ -1,39 +1,100 @@
+#!/usr/bin/env node
+
+/*
+ * node index.js [input-file]
+ */
+
 const fs = require('fs');
 const puppeteer = require('puppeteer');
 const csv = require('fast-csv');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
 
-const adapter = new FileSync('db-movie.json');
-const db = low(adapter);
+let db, csvData = [];
 
-const MOVIE_FILE = './Movie.csv';
-const movieData = [];
-
-const hasMovies = db.has('movies').value();
-if (!hasMovies) {
-  // if no movies key, set the defaults value
-  db.defaults({count: 0, movies: []})
-    .write();
-}
-
-fs.createReadStream(MOVIE_FILE)
-  .pipe(csv.parse({headers: true, discardUnmappedColumns: true, trim: true}))
-  .on('error', error => console.error(error))
-  .on('data', row => {
-    movieData.push(row);
-  })
-  .on('end', async rowCount => {
-    console.log(`Parsed ${rowCount} rows`);
-    await fetchItems();
-  });
+init();
 
 function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+function init() {
+  const [inputFile] = process.argv.slice(2);
+  if (!inputFile) {
+    console.error('Input csv file is not provided');
+    return;
+  }
+  const splitted = inputFile.split('.');
+  if (splitted.length > 1) {
+    const ext = splitted.slice(-1)[0];
+    if (ext !== 'csv') {
+      console.error('Input file is not .csv format');
+      return;
+    }
+  }
+  const filename = splitted.slice(0, -1).join('.');
+  const outputFile = 'db-' + filename + '.json';
+  console.log('Output file is ' + outputFile);
+  const adapter = new FileSync(outputFile);
+  db = low(adapter);
+
+  // check if db-*.json is initialized, set the defaults
+  const hasValues = db.has('values').value();
+  if (!hasValues) {
+    db.defaults({count: 0, values: []})
+      .write();
+  }
+
+  // read csv file to csvData
+  fs.createReadStream(inputFile)
+    .pipe(csv.parse({headers: true, discardUnmappedColumns: true, trim: true}))
+    .on('error', error => console.error(error))
+    .on('data', row => {
+      csvData.push(row);
+    })
+    .on('end', async rowCount => {
+      console.log(`Parsed ${rowCount} rows`);
+      await fetchItems();
+    });
+}
+
+async function fetchItems() {
+  const browser = await puppeteer.launch({userDataDir: './udata', headless: true});
+  const pagesPromises = [];
+  let handleCount = 0, shouldHold = false;
+
+  for (let i = 0; i < csvData.length; i = i + 10) {
+    pagesPromises.length = 0; // empty the array without creating a new empty one
+    for (let pi = 0; pi < 10; pi++) {
+      if (i + pi < csvData.length) {
+        const item = csvData[i + pi];
+        const itemDd = db.get('values').find({link: item.link}).value(); // find the item in db
+        if (!itemDd || !itemDd.checked) { // if not found item or item not checked
+          handleCount++;
+          if (handleCount % 70 === 0) {
+            shouldHold = true;
+          }
+          pagesPromises.push(browser.newPage().then(page => extractItem(page, item)));
+        }
+      }
+    }
+    if (pagesPromises.length) {
+      await Promise.all(pagesPromises);
+      db.write(); // write/sync to file
+      await sleep(Math.round(Math.random() * 30 + 1) * 100);
+      if (shouldHold) {
+        console.log(`Holding on for 60s...`);
+        await sleep(6e4); // waiting 60s every 70 item handled
+        shouldHold = false;
+      }
+    }
+  }
+
+  await browser.close();
+}
+
 async function extractItem(page, item) {
-  await sleep(Math.round(Math.random() * 20) * 100); // set different sleep, all < 2s
+  await sleep(Math.round(Math.random() * 15) * 100); // set random sleep, < 1.5s
   await page.goto(item.link, {waitUntil: 'domcontentloaded'}).catch(err => {console.log('GOTO error with:', item.link, item.title, err)});
   const found = await page.$('#content h1 .year');
   if (found) { // means this item can be seen at least
@@ -69,10 +130,10 @@ async function extractItem(page, item) {
     }
 
     try {
-      // selector 可能并不对，多数情况是最后一项，但有些热门电影会有另一项“官方小站”作为最后一项
-      const imdb = await page.$eval('#info .pl:last-of-type', el => {
-        if (el.textContent.startsWith('IMDb')) {
-          return el.nextElementSibling.href;
+      const imdb = await page.$$eval('#info .pl', els => {
+        const filtered = [...els].filter(e => e.textContent.startsWith('IMDb')); // 找 IMDb 链接
+        if (filtered.length) {
+          return filtered[0].nextElementSibling.href;
         }
         return '';
       });
@@ -83,11 +144,11 @@ async function extractItem(page, item) {
 
     item.checked = 1;
     console.log(item.title, item.link, 'checked~!');
-    db.get('movies')
+    db.get('values')
       .push(item)
-      .write();
+      .value();
     db.update('count', n => n + 1)
-      .write();
+      .value();
 
   } else {
     try {
@@ -100,51 +161,17 @@ async function extractItem(page, item) {
       // do noting
     }
     console.log('FAILED to extract info from: ', item.title, item.link);
-    const itemDd = db.get('movies').find({link: item.link}).value();
+    const itemDd = db.get('values').find({link: item.link}).value();
     if (!itemDd) {
-      console.log('still going to write into db for: ', item.title, item.link)
+      console.log('Still going to write into db for: ', item.title, item.link)
       item.checked = 1;
-      db.get('movies')
+      db.get('values')
         .push(item)
-        .write();
+        .value();
       db.update('count', n => n + 1)
-        .write();
+        .value();
     }
   }
   await sleep(Math.round(Math.random() * 20) * 100);
   await page.close();
-}
-
-async function fetchItems() {
-  const browser = await puppeteer.launch({userDataDir: './udata', headless: true});
-  const pagesPromises = [];
-  let handleCount = 0, shouldHold = false;
-
-  for (let i = 0; i < movieData.length; i = i + 10) {
-    pagesPromises.length = 0; // empty the array without creating a new empty one
-    for (let pi = 0; pi < 10; pi++) {
-      if (i + pi < movieData.length) {
-        const item = movieData[i + pi];
-        const itemDd = db.get('movies').find({link: item.link}).value(); // find the item in db
-        if (!itemDd || !itemDd.checked) { // if not found item or item not checked
-          handleCount++;
-          if (handleCount % 70 === 0) {
-            shouldHold = true;
-          }
-          pagesPromises.push(browser.newPage().then(page => extractItem(page, item)));
-        }
-      }
-    }
-    if (pagesPromises.length) {
-      await Promise.all(pagesPromises);
-      await sleep(Math.round(Math.random() * 30 + 1) * 100);
-      if (shouldHold) {
-        console.log(`Holding on for 60s...`);
-        await sleep(6e4); // waiting 60s every 70 item handled
-        shouldHold = false;
-      }
-    }
-  }
-
-  await browser.close();
 }
