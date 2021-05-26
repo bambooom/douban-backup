@@ -32,3 +32,6 @@ db-*.json
 
 # test file
 test.*
+
+# dot config
+.env
