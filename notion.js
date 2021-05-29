@@ -1,11 +1,18 @@
+/*
+USAGE:
+node notion.js db-movie-20210527.csv [0/1]
+*/
+
 const fs = require('fs');
+const {config} = require('dotenv');
 const csv = require('fast-csv');
-require('dotenv').config();
 const {Client, LogLevel} = require("@notionhq/client");
 const dayjs = require('dayjs');
 const got = require('got');
 const jsdom = require("jsdom");
 const {JSDOM} = jsdom;
+
+config();
 
 const DB_PROPERTIES = {
   POSTER: '海报',
@@ -28,18 +35,18 @@ function sleep(ms) {
 // Initializing a client
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
-  logLevel: LogLevel.DEBUG,
+  // logLevel: LogLevel.DEBUG,
 });
 
 // example: https://github.com/makenotion/notion-sdk-js/blob/main/examples/database-update-send-email/index.js
 
 const databaseId = process.env.NOTION_DATABASE_ID;
 // read csv file to csvData, and these are going to be filled in notion database
-const csvData = [];
+let csvData = [];
 
 async function main() {
   // get input csv file from cli arg
-  const [inputFile] = process.argv.slice(2);
+  const [inputFile, skipMode = 1] = process.argv.slice(2);
   if (!inputFile) {
     console.error('Input csv file is not provided');
     return;
@@ -65,36 +72,7 @@ async function main() {
     page_size: 1,
   });
 
-  // example of properties:
-  // {
-  //   '条目链接': {
-  //     id: '=jBf',
-  //       type: 'url',
-  //         url: 'https://movie.douban.com/subject/26277363/'
-  //   },
-  //   'IMDb 链接': {
-  //     id: '@ME}',
-  //       type: 'url',
-  //         url: 'https://www.imdb.com/title/tt5419278'
-  //   },
-  //   '主演': { id: 'X{lL', type: 'rich_text', rich_text: [[Object]] },
-  //   '个人评分': { id: 'Z^ph', type: 'multi_select', multi_select: [[Object]] },
-  //   '打分日期': {
-  //     id: 'e\\{[',
-  //       type: 'date',
-  //         date: { start: '2021-01-19', end: null }
-  //   },
-  //   '类型': {
-  //     id: 'pzY>',
-  //       type: 'multi_select',
-  //         multi_select: [[Object], [Object]]
-  //   },
-  //   '海报': { id: 't@Fv', type: 'files', files: [[Object]] },
-  //   '我的短评': { id: 'wG?R', type: 'rich_text', rich_text: [[Object]] },
-  //   '上映年份': { id: 'xghA', type: 'number', number: 2016 },
-  //   '导演': { id: 'y]UL', type: 'rich_text', rich_text: [[Object]] },
-  //   '标题': { id: 'title', type: 'title', title: [[Object]] }
-  // }
+  // console.log(lastMovieItem.results[0].properties[DB_PROPERTIES.GENRE]);
 
   // get the last inserted item's date
   const lastDate = lastMovieItem.results[0].properties[DB_PROPERTIES.RATING_DATE].date.start; // '2021-01-19'
@@ -105,26 +83,32 @@ async function main() {
     .pipe(csv.parse({ headers: true, discardUnmappedColumns: true, trim: true }))
     .on('error', error => console.error(error))
     .on('data', row => {
-      if (skip) { return; }
-      row[RATING_DATE] = row[RATING_DATE].replace(/\//g, '-');
-      if (dayjs(row[RATING_DATE]).isAfter(dayjs(lastDate))) {
-        csvData.push(row); // only save the items after the lastDate
+      if (Number(skipMode)) {
+        if (skip) { return; }
+        row[DB_PROPERTIES.RATING_DATE] = row[DB_PROPERTIES.RATING_DATE].replace(/\//g, '-');
+        if (dayjs(row[DB_PROPERTIES.RATING_DATE]).isAfter(dayjs(lastDate))) {
+          csvData.push(row); // only save the items after the lastDate
+        } else {
+          skip = true;
+        }
       } else {
-        skip = true;
+        row[DB_PROPERTIES.RATING_DATE] = row[DB_PROPERTIES.RATING_DATE].replace(/\//g, '-');
+        csvData.push(row);
       }
+
     })
-    .on('end', rowCount => {
+    .on('end', async rowCount => {
       console.log(`Parsed ${rowCount} rows, there are ${csvData.length} new items need to be handled.`);
       await handleNewItems();
     });
 }
 
 async function handleNewItems() {
+  csvData = csvData.reverse();
   for (let i = 0; i < csvData.length; i++) {
-    const row = csvData[i];
+    const row = csvData[i]; // reverse the array
     const link = row[DB_PROPERTIES.ITEM_LINK];
     delete row['上映日期'];
-    row[DB_PROPERTIES.RATING_DATE] = row[DB_PROPERTIES.RATING_DATE].replace(/\//g, '-');
 
     let itemData;
     try {
@@ -134,16 +118,6 @@ async function handleNewItems() {
     } catch (error) {
       console.error(row[DB_PROPERTIES.TITLE], error);
     }
-  // csv row example data:
-  // {
-  //   '标题': '无间双龙：这份爱，才是正义 / ウロボロス～この愛こそ、正義。',
-  //   '个人评分': '5',
-  //   '打分日期': '2015/03/21',
-  //   '我的短评': '5星打的绝对不是剧情！为建国，为toma，为一众cast，就是如此任性ˊ_>ˋ(1 有用)',
-  //   '上映日期': '2015/01/16',
-  //   '制片国家': '日本',
-  //   '条目链接': 'https://movie.douban.com/subject/25953663/'
-  // }
 
     if (itemData) {
       await addToNotion(itemData);
@@ -160,7 +134,7 @@ async function fetchItem(link) {
   itemData[DB_PROPERTIES.YEAR] = dom.window.document.querySelector('#content h1 .year').textContent.slice(1, -1);
   itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('#mainpic img').src.replace(/\.webp$/, '.jpg');
   itemData[DB_PROPERTIES.DIRECTORS] = dom.window.document.querySelector('#info .attrs').textContent;
-  itemData[DB_PROPERTIES.ACTORS] = [...dom.window.document.querySelectorAll('#info .actor .attrs span')].slice(0, 5).map(i => i.textContent).join('');
+  itemData[DB_PROPERTIES.ACTORS] = [...dom.window.document.querySelectorAll('#info .actor .attrs a')].slice(0, 5).map(i => i.textContent).join(' / ');
   itemData[DB_PROPERTIES.GENRE] = [...dom.window.document.querySelectorAll('#info [property="v:genre"]')].map(i => i.textContent); // array
   const imdbInfo = [...dom.window.document.querySelectorAll('#info span.pl')].filter(i => i.textContent.startsWith('IMDb'));
   if (imdbInfo.length) {
@@ -170,74 +144,94 @@ async function fetchItem(link) {
 }
 
 async function addToNotion(itemData) {
-  const response = await notion.pages.create({
-    parent: {
-      database_id: databaseId,
-    },
-    properties: {
-      // @todo: fill in properties by the format: https://developers.notion.com/reference/page#page-property-value
-
-      Name: {
-        title: [
-          {
-            text: {
-              content: 'Tuscan Kale',
-            },
-          },
-        ],
+  console.log('goint to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.TITLE]);
+  try {
+    const response = await notion.pages.create({
+      parent: {
+        database_id: databaseId,
       },
-      Description: {
-        text: [
-          {
-            text: {
-              content: 'A dark green leafy vegetable',
-            },
-          },
-        ],
-      },
-      'Food group': {
-        select: {
-          name: '🥦 Vegetable',
+      properties: {
+        // fill in properties by the format: https://developers.notion.com/reference/page#page-property-value
+        [DB_PROPERTIES.POSTER]: {
+          files: [
+            {
+              name: itemData[DB_PROPERTIES.POSTER],
+            }
+          ],
         },
-      },
-      Price: {
-        number: 2.5,
-      },
-    },
-    children: [
-      {
-        object: 'block',
-        type: 'heading_2',
-        heading_2: {
-          text: [
+        [DB_PROPERTIES.TITLE]: {
+          title: [
+            {
+              text: {
+                content: itemData[DB_PROPERTIES.TITLE],
+              },
+            },
+          ]
+        },
+        [DB_PROPERTIES.RATING]: {
+          'multi_select': itemData[DB_PROPERTIES.RATING] ? [
+            {
+              name: itemData[DB_PROPERTIES.RATING].toString(),
+            },
+          ] : [], // if no rating, then this multi_select should be an empty array
+        },
+        [DB_PROPERTIES.RATING_DATE]: {
+          date: {
+            start: itemData[DB_PROPERTIES.RATING_DATE],
+          },
+        },
+        [DB_PROPERTIES.COMMENTS]: {
+          'rich_text': [
             {
               type: 'text',
               text: {
-                content: 'Lacinato kale',
+                content: itemData[DB_PROPERTIES.COMMENTS] || '',
               },
             },
           ],
         },
-      },
-      {
-        object: 'block',
-        type: 'paragraph',
-        paragraph: {
-          text: [
+        [DB_PROPERTIES.YEAR]: {
+          number: Number(itemData[DB_PROPERTIES.YEAR]),
+        },
+        [DB_PROPERTIES.DIRECTORS]: {
+          'rich_text': [
             {
               type: 'text',
               text: {
-                content: 'Lacinato kale is a variety of kale with a long tradition in Italian cuisine, especially that of Tuscany. It is also known as Tuscan kale, Italian kale, dinosaur kale, kale, flat back kale, palm tree kale, or black Tuscan palm.',
-                link: {
-                  url: 'https://en.wikipedia.org/wiki/Lacinato_kale',
-                },
+                content: itemData[DB_PROPERTIES.DIRECTORS],
               },
             },
           ],
         },
+        [DB_PROPERTIES.ACTORS]: {
+          'rich_text': [
+            {
+              type: 'text',
+              text: {
+                content: itemData[DB_PROPERTIES.ACTORS],
+              },
+            },
+          ],
+        },
+        [DB_PROPERTIES.GENRE]: { // array
+          'multi_select': (itemData[DB_PROPERTIES.GENRE] || []).map(g => ({
+            name: g, // @Q: if the option is not created before, can not use it directly here?
+          })),
+        },
+        [DB_PROPERTIES.ITEM_LINK]: {
+          url: itemData[DB_PROPERTIES.ITEM_LINK],
+        },
+        [DB_PROPERTIES.IMDB_LINK]: {
+          url: itemData[DB_PROPERTIES.IMDB_LINK] || null,
+        },
       },
-    ],
-  });
+    });
+    if (response && response.id) {
+      console.log(itemData[DB_PROPERTIES.TITLE] + `(${itemData[DB_PROPERTIES.ITEM_LINK]})` + ' page created.');
+    }
+  } catch (error) {
+    console.warn('Failed to create ' + itemData[DB_PROPERTIES.TITLE] + `(${itemData[DB_PROPERTIES.ITEM_LINK]})` + ' with error: ', error);
+  }
 }
 
-// main();
+main();
