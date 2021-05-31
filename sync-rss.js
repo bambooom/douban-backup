@@ -1,120 +1,84 @@
-/*
-USAGE:
-node notion.js db-movie-20210527.csv [skipMode=0/1]
-skipMode = 0 means no need to skip already imported data by date
-*/
-
-const fs = require('fs');
 const {config} = require('dotenv');
-const csv = require('fast-csv');
-const {Client, LogLevel} = require("@notionhq/client");
+const {Client} = require("@notionhq/client");
 const dayjs = require('dayjs');
 const got = require('got');
 const jsdom = require("jsdom");
 const {JSDOM} = jsdom;
+const Parser = require('rss-parser');
+const parser = new Parser();
 const {DB_PROPERTIES, sleep} = require('./util');
 
 config();
 
-// Initializing a client
+const DOUBAN_USER_ID = process.env.DOUBAN_USER_ID;
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
-  // logLevel: LogLevel.DEBUG,
 });
-
-// example: https://github.com/makenotion/notion-sdk-js/blob/main/examples/database-update-send-email/index.js
-
 const databaseId = process.env.NOTION_DATABASE_ID;
-// read csv file to csvData, and these are going to be filled in notion database
-let csvData = [];
 
-async function main() {
-  // get input csv file from cli arg
-  const [inputFile, skipMode = 1] = process.argv.slice(2);
-  if (!inputFile) {
-    console.error('Input csv file is not provided');
+(async () => {
+
+  let feed = await parser.parseURL(`https://www.douban.com/feed/people/${DOUBAN_USER_ID}/interests`);
+
+  feed = feed.items.filter(item => /^看过/.test(item.title)) // care for done status items only for now
+    .map(item => ({
+      link: item.link,
+      comment: item.contentSnippet, // 备注：XXX -> 短评
+      time: item.isoDate, // '2021-05-30T06:49:34.000Z'
+    }));
+
+  if (feed.length === 0) {
+    console.log('No new items.');
     return;
   }
-  const splitted = inputFile.split('.');
-  if (splitted.length > 1) {
-    const ext = splitted.slice(-1)[0];
-    if (ext !== 'csv') {
-      console.error('Input file is not .csv format');
-      return;
-    }
-  }
 
-  // query current db last inserted item
-  const lastMovieItem = await notion.databases.query({
+  // query current db for feeds
+  const filteredItems = await notion.databases.query({
     database_id: databaseId,
-    sorts: [
-      {
-        property: DB_PROPERTIES.RATING_DATE,
-        direction: 'descending',
-      },
-    ],
-    page_size: 1,
+    filter: {
+      or: feed.map(item => ({
+        property: DB_PROPERTIES.ITEM_LINK,
+        url: {
+          equals: item.link,
+        },
+      })),
+    },
   });
 
-  // console.log(lastMovieItem.results[0].properties[DB_PROPERTIES.GENRE]);
-
-  // get the last inserted item's date
-  const lastDate = lastMovieItem.results[0].properties[DB_PROPERTIES.RATING_DATE].date.start; // '2021-01-19'
-
-  let skip = false;
-  const rs = fs.createReadStream(inputFile);
-  rs
-    .pipe(csv.parse({ headers: true, discardUnmappedColumns: true, trim: true }))
-    .on('error', error => console.error(error))
-    .on('data', row => {
-      if (Number(skipMode)) {
-        if (skip) { return; }
-        row[DB_PROPERTIES.RATING_DATE] = row[DB_PROPERTIES.RATING_DATE].replace(/\//g, '-');
-        if (dayjs(row[DB_PROPERTIES.RATING_DATE]).isAfter(dayjs(lastDate))) {
-          csvData.push(row); // only save the items after the lastDate
-        } else {
-          skip = true;
-        }
-      } else {
-        row[DB_PROPERTIES.RATING_DATE] = row[DB_PROPERTIES.RATING_DATE].replace(/\//g, '-');
-        csvData.push(row);
-      }
-
-    })
-    .on('end', async rowCount => {
-      console.log(`Parsed ${rowCount} rows, there are ${csvData.length} new items need to be handled.`);
-      await handleNewItems();
+  if (filteredItems.results.length) { // some items in feed has already inserted
+    feed = feed.filter(item => {
+      let findItem = filteredItems.results.filter(i => i.properties[DB_PROPERTIES.ITEM_LINK].url === item.link);
+      return !findItem.length; // if length != 0 means can find item in the filtered results, means this item already in db
     });
-}
+  }
 
-async function handleNewItems() {
-  csvData = csvData.reverse();
-  for (let i = 0; i < csvData.length; i++) {
-    const row = csvData[i]; // reverse the array
-    const link = row[DB_PROPERTIES.ITEM_LINK];
-    delete row['上映日期'];
-
+  for (let i = 0; i < feed.length; i++) {
+    const item = feed[i];
+    const link = item.link;
     let itemData;
     try {
-      itemData = await fetchItem(link); // https://movie.douban.com/subject/1291552/
-      itemData = {...itemData, ...row}; // merge all data
-
+      itemData = await fetchItem(link);
+      itemData[DB_PROPERTIES.ITEM_LINK] = link;
+      // itemData[DB_PROPERTIES.RATING] = // @todo: parse from '推荐: 很差/较差/还行/推荐/力荐'
+      itemData[DB_PROPERTIES.RATING_DATE] = dayjs(item.isoDate).format('YYYY-MM-DD');
+      itemData[DB_PROPERTIES.COMMENTS] = item.comment.replace(/^备注：/, '');
     } catch (error) {
-      console.error(row[DB_PROPERTIES.TITLE], error);
+      console.error(link, error);
     }
 
     if (itemData) {
       await addToNotion(itemData);
-      await sleep(3000); // wait for 3s to avoid blocking from douban
+      await sleep(2000);
     }
 
   }
-}
+})();
 
 async function fetchItem(link) {
   const itemData = {};
   const response = await got(link);
   const dom = new JSDOM(response.body);
+  itemData[DB_PROPERTIES.TITLE] = dom.window.document.querySelector('#content h1 [property="v:itemreviewed"]').textContent.trim();
   itemData[DB_PROPERTIES.YEAR] = dom.window.document.querySelector('#content h1 .year').textContent.slice(1, -1);
   itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('#mainpic img').src.replace(/\.webp$/, '.jpg');
   itemData[DB_PROPERTIES.DIRECTORS] = dom.window.document.querySelector('#info .attrs').textContent;
@@ -217,5 +181,3 @@ async function addToNotion(itemData) {
     console.warn('Failed to create ' + itemData[DB_PROPERTIES.TITLE] + `(${itemData[DB_PROPERTIES.ITEM_LINK]})` + ' with error: ', error);
   }
 }
-
-main();
