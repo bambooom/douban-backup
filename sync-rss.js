@@ -10,6 +10,14 @@ const {DB_PROPERTIES, sleep} = require('./util');
 
 config();
 
+const RATING_TEXT = {
+  '很差': 1,
+  '较差': 2,
+  '还行': 3,
+  '推荐': 4,
+  '力荐': 5,
+};
+
 const DOUBAN_USER_ID = process.env.DOUBAN_USER_ID;
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
@@ -17,15 +25,29 @@ const notion = new Client({
 const databaseId = process.env.NOTION_DATABASE_ID;
 
 (async () => {
-
+  console.log('Refreshing feeds from RSS...');
   let feed = await parser.parseURL(`https://www.douban.com/feed/people/${DOUBAN_USER_ID}/interests`);
 
   feed = feed.items.filter(item => /^看过/.test(item.title)) // care for done status items only for now
-    .map(item => ({
-      link: item.link,
-      comment: item.contentSnippet, // 备注：XXX -> 短评
-      time: item.isoDate, // '2021-05-30T06:49:34.000Z'
-    }));
+    .map(item => {
+      const dom = new JSDOM(item.content.trim());
+      const contents = [...dom.window.document.querySelectorAll('td p')];
+      let rating = contents.filter(el => el.textContent.startsWith('推荐'));
+      if (rating.length) {
+        rating = rating[0].textContent.replace(/^推荐: /, '').trim();
+        rating = RATING_TEXT[rating];
+      }
+      let comment = contents.filter(el => el.textContent.startsWith('备注'));
+      if (comment.length) {
+        comment = comment[0].textContent.replace(/^备注: /, '').trim();
+      }
+      return {
+        link: item.link,
+        rating: typeof rating === 'number' ? rating : null,
+        comment: typeof comment === 'string' ? comment: null, // 备注：XXX -> 短评
+        time: item.isoDate, // '2021-05-30T06:49:34.000Z'
+      };
+    });
 
   if (feed.length === 0) {
     console.log('No new items.');
@@ -52,6 +74,8 @@ const databaseId = process.env.NOTION_DATABASE_ID;
     });
   }
 
+  console.log(`There are total ${feed.length} new item(s) need to insert.`);
+
   for (let i = 0; i < feed.length; i++) {
     const item = feed[i];
     const link = item.link;
@@ -59,22 +83,23 @@ const databaseId = process.env.NOTION_DATABASE_ID;
     try {
       itemData = await fetchItem(link);
       itemData[DB_PROPERTIES.ITEM_LINK] = link;
-      // itemData[DB_PROPERTIES.RATING] = // @todo: parse from '推荐: 很差/较差/还行/推荐/力荐'
+      itemData[DB_PROPERTIES.RATING] = item.rating;
       itemData[DB_PROPERTIES.RATING_DATE] = dayjs(item.isoDate).format('YYYY-MM-DD');
-      itemData[DB_PROPERTIES.COMMENTS] = item.comment.replace(/^备注：/, '');
+      itemData[DB_PROPERTIES.COMMENTS] = item.comment;
     } catch (error) {
       console.error(link, error);
     }
 
     if (itemData) {
       await addToNotion(itemData);
-      await sleep(2000);
+      await sleep(1000);
     }
 
   }
 })();
 
 async function fetchItem(link) {
+  console.log('Fetching item with link: ', link);
   const itemData = {};
   const response = await got(link);
   const dom = new JSDOM(response.body);
@@ -92,7 +117,7 @@ async function fetchItem(link) {
 }
 
 async function addToNotion(itemData) {
-  console.log('goint to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.TITLE]);
+  console.log('Goint to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.TITLE]);
   try {
     const response = await notion.pages.create({
       parent: {
