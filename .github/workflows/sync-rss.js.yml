@@ -21,7 +21,9 @@ jobs:
 
     env:
       NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-      NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+      NOTION_MOVIE_DATABASE_ID: ${{ secrets.NOTION_MOVIE_DATABASE_ID }}
+      NOTION_MUSIC_DATABASE_ID: ${{ secrets.NOTION_MUSIC_DATABASE_ID }}
+      NOTION_BOOK_DATABASE_ID: ${{ secrets.NOTION_BOOK_DATABASE_ID }}
       DOUBAN_USER_ID: ${{ secrets.DOUBAN_USER_ID }}
 
     steps:
