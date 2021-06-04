@@ -1,7 +1,9 @@
 /*
-USAGE:
-node notion.js db-movie-20210527.csv [skipMode=0/1]
-skipMode = 0 means no need to skip already imported data by date
+ * USAGE:
+ * node update-notion.js db-movie-20210527.csv [skipMode=0/1]
+ * skipMode = 0 means no need to skip already imported data by date
+ *   -- update notion database from a csv
+ *   -- can skip already inserted items
 */
 
 const fs = require('fs');

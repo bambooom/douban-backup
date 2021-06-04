@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 
 /*
- * node index.js [input-file]
+ * node crawler.js [input-file]
+ *  -- use puppeteer to craw the movie items data
+ *  -- but **easy** to get blocked
+ *  -- input is csv file
+ *  -- use lowdb to write to a local json file
+ *  -- then use json2csv.js to reverse back to a csv file
+ *  -- which can be uploaded to notion database
  */
 
 const fs = require('fs');
