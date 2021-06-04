@@ -23,8 +23,6 @@ yarn-error.log*
 
 # chromium local user dir
 udata
-# no need lockfile
-package-lock.json
 
 # data files
 *.csv
