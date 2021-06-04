@@ -1,3 +1,5 @@
+![sync-rss](https://github.com/bambooom/douban-backup/actions/workflows/sync-rss.js.yml/badge.svg)
+
 ## update notion database from csv
 
 在前一次导出后过了一段时间，在豆瓣上又有新的标记，但没有简单方法可以同步，又不想手动添加。
