@@ -222,7 +222,7 @@ async function fetchItem(link, category) {
       } else if (text.startsWith('出版年')) {
         itemData[DB_PROPERTIES.PUBLICATION_DATE] = i.nextSibling.textContent.trim(); // this can have only year, month
       } else if (text.startsWith('ISBN')) {
-        itemData[DB_PROPERTIES.ISBN] = i.nextSibling.textContent.trim();
+        itemData[DB_PROPERTIES.ISBN] = Number(i.nextSibling.textContent.trim());
       }
     });
   }
@@ -363,7 +363,7 @@ async function addToNotion(itemData, category) {
           ],
         },
         [DB_PROPERTIES.ISBN]: {
-          number: itemData[DB_PROPERTIES.ISBN],
+          number: itemData[DB_PROPERTIES.ISBN] || null,
         },
       };
     }
