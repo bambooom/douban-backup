@@ -214,7 +214,12 @@ async function fetchItem(link, category) {
     info.forEach(i => {
       let text = i.textContent.trim();
       if (text.startsWith('作者')) {
-        itemData[DB_PROPERTIES.WRITER] = i.parentElement.textContent.trim().replace('作者:', '').trim();
+        let parent = i.parentElement;
+        if (parent.id === 'info') { // if only one writer, then parentElement is the #info container
+          itemData[DB_PROPERTIES.WRITER] = i.nextElementSibling.textContent.replace(/\n/g, '').replace(/\s/g, '');
+        } else { // if multiple writers, there will be a separate <span> element
+          itemData[DB_PROPERTIES.WRITER] = i.parentElement.textContent.trim().replace('作者:', '').trim();
+        }
       } else if (text.startsWith('出版社')) {
         itemData[DB_PROPERTIES.PUBLISHING_HOUSE] = i.nextSibling.textContent.trim();
       } else if (text.startsWith('原作名')) {
