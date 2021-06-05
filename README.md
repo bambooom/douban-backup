@@ -130,7 +130,7 @@ RSS 的好处一个是轻量，但又包含了个人标记的最重要的几个�
 
 需要一个能跑 cron job 的服务即可，贫穷又很懒的我在想过一圈之后，发现 GitHub Actions 可以跑 [scheduled workflow](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#schedule), 完美满足需求。
 
-经过一番查找文档，设定好了 [sync-rss workflow](./.github/workflows/sync-rss.js.yml)。此处我的 schedule 是 "Runs every 15th minute past the 0, 12 and 18th hour"，也就是一天也只运行 3 次。
+经过一番查找文档，设定好了 [sync-rss workflow](./.github/workflows/sync-rss.js.yml)。此处我的 schedule 是 "Runs every 6 hours"，也就是一天也只运行 4 次。
 
 但需要考虑的是，豆瓣的 RSS 数据每次都只保留 10 个，并且包括想看、想听、想读。本人仅处理看过、听过、读过的条目，所以如果某一天集中标记数量过多，可能使 RSS 数据并未全部被 workflow 获取。
 也在考虑改成 每小时或者每两个小时跑一次。

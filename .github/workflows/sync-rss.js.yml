@@ -6,8 +6,8 @@ name: sync-rss
 on:
   schedule:
     # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events
-    # Runs every 15th minute past the 0, 12 and 18th hour.
-    - cron:  '15 0,12,18 * * *'
+    # Runs every 6 hours
+    - cron:  '0 */6 * * *'
 
 jobs:
   build:
