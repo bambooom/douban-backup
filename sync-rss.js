@@ -213,6 +213,7 @@ async function fetchItem(link, category) {
     let info = [...dom.window.document.querySelectorAll('#info span.pl')];
     info.forEach(i => {
       let text = i.textContent.trim();
+      let nextText = i.nextSibling?.textContent.trim();
       if (text.startsWith('作者')) {
         let parent = i.parentElement;
         if (parent.id === 'info') { // if only one writer, then parentElement is the #info container
@@ -221,13 +222,13 @@ async function fetchItem(link, category) {
           itemData[DB_PROPERTIES.WRITER] = i.parentElement.textContent.trim().replace('作者:', '').trim();
         }
       } else if (text.startsWith('出版社')) {
-        itemData[DB_PROPERTIES.PUBLISHING_HOUSE] = i.nextSibling.textContent.trim();
+        itemData[DB_PROPERTIES.PUBLISHING_HOUSE] = nextText;
       } else if (text.startsWith('原作名')) {
-        itemData[DB_PROPERTIES.TITLE] += i.nextSibling.textContent.trim();
+        itemData[DB_PROPERTIES.TITLE] += nextText;
       } else if (text.startsWith('出版年')) {
-        itemData[DB_PROPERTIES.PUBLICATION_DATE] = i.nextSibling.textContent.trim(); // this can have only year, month
+        itemData[DB_PROPERTIES.PUBLICATION_DATE] = dayjs(nextText).format('YYYY-MM-DD'); // this can have only year, month, but need to format to YYYY-MM-DD
       } else if (text.startsWith('ISBN')) {
-        itemData[DB_PROPERTIES.ISBN] = Number(i.nextSibling.textContent.trim());
+        itemData[DB_PROPERTIES.ISBN] = Number(nextText);
       }
     });
   }
