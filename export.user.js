@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         豆瓣读书+电影+音乐导出工具
+// @name         豆瓣读书+电影+音乐+游戏导出工具
 // @namespace    https://www.douban.com/people/MoNoMilky/
-// @version      0.1
+// @version      0.2
 // @description  扩展修改自 https://openuserjs.org/scripts/KiseXu/%E8%B1%86%E7%93%A3%E7%94%B5%E5%BD%B1%E5%AF%BC%E5%87%BA%E5%B7%A5%E5%85%B7
 // @author       Bambooom
 // @match        https://book.douban.com/people/*/collect*
@@ -15,19 +15,25 @@
 
 (function () {
   'use strict';
-  var MOVIE = 'movie', BOOK = 'book', MUSIC = 'music';
+  var MOVIE = 'movie', BOOK = 'book', MUSIC = 'music', GAME = 'game', people;
   /* global $, Dexie */
 
   function getExportLink(type, people) { // type=book/movie/music
     return 'https://' + type + '.douban.com/people/' + people + '/collect?start=0&sort=time&rating=all&filter=all&mode=list&export=1';
   }
 
-  if (location.href.indexOf('//www.douban.com/') > -1) {
+  function getGameExportLink(people) { // type=game
+    return 'https://www.douban.com/people/' + people + '/games?action=collect&start=0&export=1';
+  }
+
+  if (location.href.indexOf('//www.douban.com/people/') > -1) {
     // 加入导出按钮
-    var people = location.href.slice(location.href.indexOf('/people') + 8, -1);
+    var match = location.href.match(/www\.douban\.com\/people\/(.+)\//);
+    people = match ? match[1] : null;
     $('#book h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(BOOK, people) + '">导出读过的书</a>');
     $('#movie h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(MOVIE, people) + '">导出看过的片</a>');
     $('#music h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(MUSIC, people) + '">导出听过的碟</a>');
+    $('#game h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getGameExportLink(people) + '">导出玩过的游戏</a>');
   }
 
   if (location.href.indexOf('//book.douban.com/') > -1 && location.href.indexOf('export=1') > -1) {
@@ -42,6 +48,10 @@
     init(MUSIC);
   }
 
+  if (people && location.href.indexOf('//www.douban.com/people/' + people + '/games') > -1 && location.href.indexOf('export=1') > -1) {
+    init(GAME);
+  }
+
   function escapeQuote(str) {
     return str.replaceAll('"', '""'); // " need to be replaced with two quotes to escape inside csv quoted string
   }
@@ -50,13 +60,28 @@
   function getCurPageItems(type) {
     var items = [];
 
-    $('li.item').each(function(index) {
+    var elems = $('li.item');
+
+    if (type === GAME) {
+      elems = $('.game-list .common-item');
+    }
+
+    elems.each(function(index) {
       var item = {
         title: escapeQuote($(this).find('.title a').text().trim()),
         link: $(this).find('.title a').attr('href').trim(),
-        rating: ($(this).find('.date span').attr('class')) ? $(this).find('.date span').attr('class').slice(6, 7) : '',
         'rating_date': $(this).find('.date').text().trim().replaceAll('-', '/'), // 2020-07-17 => 2020/07/17
       };
+      if (type === GAME) {
+        let rating = $(this).find('.rating-info .rating-star').attr('class');
+        rating = rating
+          ? (rating.slice(19, 20) === 'N' ? '' : Number(rating.slice(19, 20)))
+          : '';
+        item.rating = rating;
+      } else {
+        item.rating = ($(this).find('.date span').attr('class')) ? $(this).find('.date span').attr('class').slice(6, 7) : '';
+      }
+
       var co = $(this).find('.comment');
       if (co.length) {
         co = co[0];
@@ -67,6 +92,20 @@
           item.comment = co.textContent.trim();
         }
         item.comment = escapeQuote(item.comment);
+      } else if (type === GAME) {
+        co = $(this).find('.user-operation');
+        if (co.length) {
+          co = co[0];
+          item.comment = co.previousElementSibling.textContent.trim();
+          item.comment = escapeQuote(item.comment);
+        }
+      }
+
+      if (type === GAME) {
+        var extra = $(this).find('.desc')[0].firstChild.textContent.trim();
+        item.release_date = extra.split(' / ').slice(-1)[0];
+        items[index] = item;
+        return; // for type=game, here is over
       }
 
       var intro = $(this).find('.intro').text().split(' / ');
@@ -115,6 +154,10 @@
       db.version(1).stores({
         items: '++id, title, rating, rating_date, comment, release_date, musician, link',
       });
+    } else if (type === GAME) {
+      db.version(1).stores({
+        items: '++id, title, rating, rating_date, comment, release_date, link',
+      });
     }
 
     const items = getCurPageItems(type);
@@ -147,6 +190,10 @@
       db.version(1).stores({
         items: `++id, title, rating, rating_date, comment, release_date, musician, link`,
       });
+    } else if (type === GAME) {
+      db.version(1).stores({
+        items: '++id, title, rating, rating_date, comment, release_date, link',
+      });
     }
 
     db.items.orderBy('rating_date').reverse().toArray().then(function(all) {
@@ -166,6 +213,9 @@
       } else if (type === MUSIC) {
         title = title.concat(['发行日期', '音乐家', '条目链接']);
         key = key.concat(['musician', 'link']);
+      } else if (type === GAME) {
+        title = title.concat(['发行日期', '条目链接']);
+        key.push('link');
       }
 
       JSonToCSV.setDataConver({
