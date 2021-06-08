@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         豆瓣读书+电影+音乐+游戏导出工具
 // @namespace    https://www.douban.com/people/MoNoMilky/
-// @version      0.2
+// @version      0.3
 // @description  扩展修改自 https://openuserjs.org/scripts/KiseXu/%E8%B1%86%E7%93%A3%E7%94%B5%E5%BD%B1%E5%AF%BC%E5%87%BA%E5%B7%A5%E5%85%B7
 // @author       Bambooom
 // @match        https://book.douban.com/people/*/collect*
 // @match        https://movie.douban.com/people/*/collect*
 // @match        https://music.douban.com/people/*/collect*
+// @match        https://www.douban.com/location/people/*/drama/collect*
 // @match        https://www.douban.com/people/*
 // @require      https://unpkg.com/dexie@latest/dist/dexie.js
 // @grant        none
@@ -15,7 +16,7 @@
 
 (function () {
   'use strict';
-  var MOVIE = 'movie', BOOK = 'book', MUSIC = 'music', GAME = 'game', people;
+  var MOVIE = 'movie', BOOK = 'book', MUSIC = 'music', GAME = 'game', DRAMA = 'drama', people;
   /* global $, Dexie */
 
   function getExportLink(type, people) { // type=book/movie/music
@@ -26,14 +27,24 @@
     return 'https://www.douban.com/people/' + people + '/games?action=collect&start=0&export=1';
   }
 
+  function getDramaExportLink(people) { // type=game
+    return 'https://www.douban.com/location/people/' + people + '/drama/collect?start=0&sort=time&mode=grid&rating=all&export=1';
+  }
+
   if (location.href.indexOf('//www.douban.com/people/') > -1) {
     // 加入导出按钮
-    var match = location.href.match(/www\.douban\.com\/people\/(.+)\//);
+    let match = location.href.match(/www\.douban\.com\/people\/([^/]+)\//);
     people = match ? match[1] : null;
     $('#book h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(BOOK, people) + '">导出读过的书</a>');
     $('#movie h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(MOVIE, people) + '">导出看过的片</a>');
     $('#music h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(MUSIC, people) + '">导出听过的碟</a>');
     $('#game h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getGameExportLink(people) + '">导出玩过的游戏</a>');
+    $('#drama h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getDramaExportLink(people) + '">导出看过的舞台剧</a>');
+  }
+
+  if (location.href.indexOf('//www.douban.com/location/people/') > -1) { // for drama link
+    let match = location.href.match(/www\.douban\.com\/location\/people\/([^/]+)\//);
+    people = match ? match[1] : null;
   }
 
   if (location.href.indexOf('//book.douban.com/') > -1 && location.href.indexOf('export=1') > -1) {
@@ -52,6 +63,10 @@
     init(GAME);
   }
 
+  if (people && location.href.indexOf('//www.douban.com/location/people/' + people + '/drama') > -1 && location.href.indexOf('export=1') > -1) {
+    init(DRAMA);
+  }
+
   function escapeQuote(str) {
     return str.replaceAll('"', '""'); // " need to be replaced with two quotes to escape inside csv quoted string
   }
@@ -64,6 +79,8 @@
 
     if (type === GAME) {
       elems = $('.game-list .common-item');
+    } else if (type === DRAMA) {
+      elems = $('.grid-view .item');
     }
 
     elems.each(function(index) {
@@ -78,6 +95,14 @@
           ? (rating.slice(19, 20) === 'N' ? '' : Number(rating.slice(19, 20)))
           : '';
         item.rating = rating;
+
+      } else if (type === DRAMA) {
+        let rating = $(this).find('.date')[0].previousElementSibling;
+        if (rating) {
+          rating = $(rating).attr('class').slice(6, 7);
+        }
+        item.rating = rating ? Number(rating) : '';
+
       } else {
         item.rating = ($(this).find('.date span').attr('class')) ? $(this).find('.date span').attr('class').slice(6, 7) : '';
       }
@@ -99,13 +124,28 @@
           item.comment = co.previousElementSibling.textContent.trim();
           item.comment = escapeQuote(item.comment);
         }
+      } else if (type === DRAMA) {
+        co = $(this).find('.opt-ln');
+        if (co.length) {
+          co = co[0].previousElementSibling;
+          if ($(co).find('.date').length === 0) {
+            item.comment = co.textContent.trim();
+          }
+        }
       }
 
       if (type === GAME) {
-        var extra = $(this).find('.desc')[0].firstChild.textContent.trim();
+        let extra = $(this).find('.desc')[0].firstChild.textContent.trim();
         item.release_date = extra.split(' / ').slice(-1)[0];
         items[index] = item;
         return; // for type=game, here is over
+      }
+
+      if (type === DRAMA) {
+        let extra = $(this).find('.intro')[0].textContent.trim();
+        item.mixed_info = extra;
+        items[index] = item;
+        return; // for type=drama, here is over
       }
 
       var intro = $(this).find('.intro').text().split(' / ');
@@ -158,6 +198,10 @@
       db.version(1).stores({
         items: '++id, title, rating, rating_date, comment, release_date, link',
       });
+    } else if (type === DRAMA) {
+      db.version(1).stores({
+        items: '++id, title, rating, rating_date, comment, mixed_info, link',
+      });
     }
 
     const items = getCurPageItems(type);
@@ -194,6 +238,10 @@
       db.version(1).stores({
         items: '++id, title, rating, rating_date, comment, release_date, link',
       });
+    } else if (type === DRAMA) {
+      db.version(1).stores({
+        items: '++id, title, rating, rating_date, comment, mixed_info, link',
+      });
     }
 
     db.items.orderBy('rating_date').reverse().toArray().then(function(all) {
@@ -216,6 +264,10 @@
       } else if (type === GAME) {
         title = title.concat(['发行日期', '条目链接']);
         key.push('link');
+      } else if (type === DRAMA) {
+        title = title.concat(['混合信息', '条目链接']);
+        key.pop();
+        key = key.concat(['mixed_info', 'link']);
       }
 
       JSonToCSV.setDataConver({
