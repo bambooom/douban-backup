@@ -1,16 +1,18 @@
 // ==UserScript==
-// @name         豆瓣读书+电影+音乐+游戏+舞台剧导出工具
-// @namespace    https://www.douban.com/people/MoNoMilky/
-// @version      0.3.1
-// @description  扩展修改自 https://openuserjs.org/scripts/KiseXu/%E8%B1%86%E7%93%A3%E7%94%B5%E5%BD%B1%E5%AF%BC%E5%87%BA%E5%B7%A5%E5%85%B7
-// @author       Bambooom
-// @match        https://book.douban.com/people/*/collect*
-// @match        https://movie.douban.com/people/*/collect*
-// @match        https://music.douban.com/people/*/collect*
-// @match        https://www.douban.com/location/people/*/drama/collect*
-// @match        https://www.douban.com/people/*
-// @require      https://unpkg.com/dexie@latest/dist/dexie.js
-// @grant        none
+// @name             豆瓣读书+电影+音乐+游戏+舞台剧导出工具
+// @namespace        https://www.douban.com/people/MoNoMilky/
+// @version          0.3.2
+// @description      将读过/看过/听过/玩过的读书/电影/音乐/游戏/舞台剧条目分别导出为 csv 文件
+// @author           Bambooom
+// @match            https://book.douban.com/people/*/collect*
+// @match            https://movie.douban.com/people/*/collect*
+// @match            https://music.douban.com/people/*/collect*
+// @match            https://www.douban.com/location/people/*/drama/collect*
+// @match            https://www.douban.com/people/*
+// @require          https://unpkg.com/dexie@latest/dist/dexie.js
+// @grant            none
+// @original-script  https://openuserjs.org/scripts/KiseXu/%E8%B1%86%E7%93%A3%E7%94%B5%E5%BD%B1%E5%AF%BC%E5%87%BA%E5%B7%A5%E5%85%B7
+// @original-license MIT
 // ==/UserScript==
 
 
