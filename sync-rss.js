@@ -40,7 +40,7 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
 
   feed = feed.items.filter(item => done.test(item.title)); // care for done status items only for now
   feed.forEach(item => {
-      const category = getCategory(item.title);
+      const category = getCategory(item.title, item.link);
       const dom = new JSDOM(item.content.trim());
       const contents = [...dom.window.document.querySelectorAll('td p')];
       let rating = contents.filter(el => el.textContent.startsWith('推荐'));
@@ -137,13 +137,15 @@ async function handleFeed(feed, category) {
   console.log('====================');
 }
 
-function getCategory(title) {
+function getCategory(title, link) {
   let m = title.match(done);
   m = m[1];
   let res;
   switch (m) {
     case '看过':
-      res = CATEGORY.movie;
+      if (link.startsWith('http://movie.douban.com/')) {
+        res = CATEGORY.movie; // "看过" maybe 舞台剧
+      }
       break;
     case '读过':
       res = CATEGORY.book;
