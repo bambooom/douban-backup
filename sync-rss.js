@@ -202,7 +202,8 @@ async function fetchItem(link, category) {
     let info = [...dom.window.document.querySelectorAll('#info span.pl')];
     let release = info.filter(i => i.textContent.trim().startsWith('发行时间'));
     if (release.length) {
-      itemData[DB_PROPERTIES.RELEASE_DATE] = release[0].nextSibling.textContent.trim(); // 2021-05-31
+      let date = release[0].nextSibling.textContent.trim(); // 2021-05-31, or 2021-4-2
+      itemData[DB_PROPERTIES.RELEASE_DATE] = dayjs(date).format('YYYY-MM-DD');
     }
     let musician = info.filter(i => i.textContent.trim().startsWith('表演者'));
     if (musician.length) {
