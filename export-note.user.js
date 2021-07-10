@@ -6,13 +6,17 @@
 // @author           Bambooom
 // @icon             https://www.google.com/s2/favicons?domain=douban.com
 // @match            https://www.douban.com/people/*/notes*
+// @match            https://www.douban.com/people/*
 // @require          https://unpkg.com/dexie@latest/dist/dexie.js
 // @require          https://unpkg.com/turndown/dist/turndown.js
+// @require          https://unpkg.com/jszip@3.2.0/dist/jszip.min.js
+// @require          https://unpkg.com/file-saver@2.0.0-rc.2/dist/FileSaver.min.js
 // @grant            none
 // ==/UserScript==
 
 (function () {
   'use strict';
+  /* global $, Dexie, TurndownService, JSZip, saveAs */
 
   var tdService = new TurndownService({
     headingStyle: 'atx', // use # for header
@@ -123,40 +127,101 @@
     },
   });
 
+  var people;
+
+  if (location.href.indexOf('//www.douban.com/people/') > -1) {
+    // 加入导出按钮
+    let match = location.href.match(/www\.douban\.com\/people\/([^/]+)\//);
+    people = match ? match[1] : null;
+    $('#note h2 .pl a:last').after('&nbsp;·&nbsp;<a href="https://www.douban.com/people/' + people + '/notes?start=0&type=note&export=1">导出</a>');
+  }
+
+  if (people && location.href.indexOf('//www.douban.com/people/' + people + '/notes') > -1 && location.href.indexOf('export=1') > -1) {
+    init();
+  }
+
   function escapeQuote(str) {
     return str.replaceAll('"', '""'); // " need to be replaced with two quotes to escape inside csv quoted string
   }
 
-  // @todo: use button to activate, and also save to dexie and export all md files
-  //$('#content .aside .create-note a:last').after('&nbsp; &nbsp;<a href="?start=0&type=note&export=1" onclick="">导出日记</a>');
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
-  var notes = $('.note-container[id^="note-"]');
-  notes.each(function (index) {
-    var note = $(this);
-    var title = escapeQuote(note.find('.note-header-container a').text().trim());
-    console.log(title);
-    var toggle = note.find('.note-header-container .rr a:first'); // 展开全文
-    // toggle.click();
+  async function init() {
+    const db = new Dexie('db_notes_export'); // init indexedDB
+    db.version(1).stores({
+      notes: '++id, title, datetime, linkid, md',
+    });
 
-    // @fixme: test for only one note is enough
-    if (index === 0) {
+    const notes = await getCurPageNotes();
+    db.notes.bulkAdd(notes).then(function () {
+      console.log('添加成功+', notes.length);
+
+      let nextPageLink = $('.paginator span.next a').attr('href');
+      if (nextPageLink) {
+        nextPageLink = nextPageLink + '&export=1';
+        window.location.href = nextPageLink;
+      } else {
+        exportAll();
+      }
+    }).catch(function (error) {
+      console.error("Ooops: " + error);
+    });
+  }
+
+  async function getCurPageNotes() {
+    var notes = [];
+    var elems = $('.note-container[id^="note-"]').get();
+
+    // 展开全文
+    var toggles = document.querySelectorAll('.note-header-container .rr a.a_unfolder_n');
+    Array.from(toggles).forEach(toggle => {
       toggle.click();
+    });
 
-      setTimeout(() => {
-        let dom = note.find('[id^="note_"][id$="_full"] .note')[0];
-        let md = tdService.turndown(dom);
-        console.log(md);
-      }, 1500);
+    await sleep(1500); // wait 2s for the full note to be rendered
+
+    for (let i = 0; i < elems.length; i++) {
+      var note = elems[i];
+      var id = note.id.match(/note-(\d+)$/);
+      id = id[1];
+      var title = escapeQuote(note.querySelector('.note-header-container h3 > a').textContent.trim());
+      var datetime = note.querySelector('.note-header-container .pub-date').textContent;
+
+      var notedom = note.querySelector('[id^="note_"][id$="_full"] .note');
+      var md = tdService.turndown(notedom);
+      notes.push({
+        title,
+        datetime,
+        linkid: id,
+        md,
+      });
     }
 
-    // setTimeout(function() {
-    //   let dom = note.find('[id^="note_"][id$="_full"] .note')[0];
-    //   let md = tdService.turndown(dom);
-    //   // @todo: add rule to turndown, more specify for douban note style
+    return notes;
+  }
 
-    //   // console.log(md);
-    // }, 1500);
-  });
+  function exportAll() {
+    const db = new Dexie('db_notes_export');
+    db.version(1).stores({
+      notes: '++id, title, datetime, linkid, md',
+    });
 
+    var zip = new JSZip();
+
+    db.notes.toArray().then(function (all) {
+      all.map(function(item) {
+        delete item.id;
+        zip.file(item.linkid + '.md', item.md);
+      });
+
+      zip.generateAsync({type:"blob"}).then(function(content) {
+        saveAs(content, 'douban-notes-' + new Date().toISOString().split('T')[0].replaceAll('-', '') + '.zip');
+      });
+
+      db.delete();
+    });
+  }
 
 })();
