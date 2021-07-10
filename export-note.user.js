@@ -230,7 +230,7 @@
     db.notes.toArray().then(function (all) {
       all.map(function(item) {
         delete item.id;
-        zip.file(item.linkid + '.md', item.md);
+        zip.file(item.linkid + '-' + item.title + '.md', item.md);
       });
 
       zip.generateAsync({type:"blob"}).then(function(content) {
