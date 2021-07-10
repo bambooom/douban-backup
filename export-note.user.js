@@ -16,10 +16,46 @@
 
   var tdService = new TurndownService({
     headingStyle: 'atx', // use # for header
+    hr: '---',
+    codeBlockStyle: 'fenced',
+    bulletListMarker: '-',
   });
 
-  // highlight-block => ref block `>`
-  tdService.addRule('highlight-block', {
+  // <mark>, keep this html since no corresponding format in markdown
+  tdService.keep(['mark']);
+
+  // span font-weight:bold => **content**
+  tdService.addRule('bold', {
+    filter: function(node) {
+      return (
+        node.nodeName === 'SPAN' &&
+        node.style[0] &&
+        node.style[0] === 'font-weight' &&
+        node.style.fontWeight === 'bold'
+      );
+    },
+    replacement: function (content) {
+      return '**' + content + '** '; // add one more space in the end as in Chinese if no space, the markdown syntax is not rendered correctly
+    },
+  });
+
+  // span text-decoration:line-through => ~~content~~
+  tdService.addRule('line-through', {
+    filter: function(node) {
+      return (
+        node.nodeName === 'SPAN' &&
+        node.style[0] &&
+        node.style[0].startsWith('text-decoration') &&
+        node.style.textDecoration === 'line-through'
+      );
+    },
+    replacement: function (content) {
+      return '~~' + content + '~~ '; // add one more space in the end
+    },
+  });
+
+  // highlight-block 文本区块 => ref block `>`
+  tdService.addRule('hilite- block', {
     filter: function(node) {
       return (
         node.nodeName === 'DIV' &&
@@ -31,8 +67,61 @@
     },
   });
 
-  // @todo: span font-weight: bold => **bold**
-  // @todo: keep <mark>
+  // introduction 导语 => ref block `>`
+  tdService.addRule('introduction', {
+    filter: function(node) {
+      return (
+        node.nodeName === 'DIV' &&
+        node.className === 'introduction'
+      );
+    },
+    replacement: function (_, node) {
+      return '> ' + node.textContent + '\n\n';
+    },
+  });
+
+  // handle video => make it to link format
+  tdService.addRule('video', {
+    filter: function(node) {
+      return (
+        node.nodeName === 'DIV' &&
+        node.className === 'video-player-iframe'
+      );
+    },
+    replacement: function(_, node) {
+      var link = node.children[0].getAttribute('src'); // first child is iframe, src it the the video link
+      var title = node.children[1].textContent.trim(); // second child is video-title
+      return '[' + title + '](' + link + ')';
+    },
+  });
+
+  // movie/music/book/... item card => link format now
+  tdService.addRule('subject', {
+    filter: function(node) {
+      return (
+        node.nodeName === 'DIV' &&
+        node.className === 'subject-wrapper'
+      );
+    },
+    replacement: function(_, node) {
+      var link = node.children[0].getAttribute('href'); // item link
+      var title = node.querySelector('.subject-title').textContent.trim(); // item title
+      return '[' + title + '](' + link + ')';
+    },
+  });
+
+  // item caption => ref
+  tdService.addRule('subject-caption', {
+    filter: function(node) {
+      return (
+        node.nodeName === 'DIV' &&
+        node.className === 'subject-caption'
+      );
+    },
+    replacement: function(content) {
+      return '> ' + content;
+    },
+  });
 
   function escapeQuote(str) {
     return str.replaceAll('"', '""'); // " need to be replaced with two quotes to escape inside csv quoted string
