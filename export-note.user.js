@@ -144,10 +144,6 @@
     return str.replaceAll('"', '""'); // " need to be replaced with two quotes to escape inside csv quoted string
   }
 
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
   async function init() {
     const db = new Dexie('db_notes_export'); // init indexedDB
     db.version(1).stores({
@@ -170,6 +166,28 @@
     });
   }
 
+  // https://gist.github.com/jwilson8767/db379026efcbd932f64382db4b02853e
+  function noteReady(noteId) {
+    const selector = '#note_' + noteId + '_full .note';
+    return new Promise((resolve, reject) => {
+      let el = document.querySelector(selector);
+      if (el) { resolve(el); }
+
+      new MutationObserver((_, observer) => {
+        // Query for elements matching the specified selector
+        Array.from(document.querySelectorAll(selector)).forEach((element) => {
+          resolve(element);
+          //Once we have resolved we don't need the observer anymore.
+          observer.disconnect();
+        });
+      })
+        .observe(document.documentElement, {
+          childList: true,
+          subtree: true
+        });
+    });
+  }
+
   async function getCurPageNotes() {
     var notes = [];
     var elems = $('.note-container[id^="note-"]').get();
@@ -180,8 +198,6 @@
       toggle.click();
     });
 
-    await sleep(1500); // wait 2s for the full note to be rendered
-
     for (let i = 0; i < elems.length; i++) {
       var note = elems[i];
       var id = note.id.match(/note-(\d+)$/);
@@ -189,7 +205,8 @@
       var title = escapeQuote(note.querySelector('.note-header-container h3 > a').textContent.trim());
       var datetime = note.querySelector('.note-header-container .pub-date').textContent;
 
-      var notedom = note.querySelector('[id^="note_"][id$="_full"] .note');
+      await noteReady(id);
+      var notedom = note.querySelector('#note_' + id + '_full .note');
       var md = tdService.turndown(notedom);
       notes.push({
         title,
