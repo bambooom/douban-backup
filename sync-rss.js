@@ -40,32 +40,33 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
 
   feed = feed.items.filter(item => done.test(item.title)); // care for done status items only for now
   feed.forEach(item => {
-      const category = getCategory(item.title, item.link);
-      const dom = new JSDOM(item.content.trim());
-      const contents = [...dom.window.document.querySelectorAll('td p')];
-      let rating = contents.filter(el => el.textContent.startsWith('推荐'));
-      if (rating.length) {
-        rating = rating[0].textContent.replace(/^推荐: /, '').trim();
-        rating = RATING_TEXT[rating];
-      }
-      let comment = contents.filter(el => el.textContent.startsWith('备注'));
-      if (comment.length) {
-        comment = comment[0].textContent.replace(/^备注: /, '').trim();
-      }
-      const result = {
-        link: item.link,
-        rating: typeof rating === 'number' ? rating : null,
-        comment: typeof comment === 'string' ? comment : null, // 备注：XXX -> 短评
-        time: item.isoDate, // '2021-05-30T06:49:34.000Z'
-      };
-      if (category === CATEGORY.movie) {
-        movieFeed.push(result);
-      } else if (category === CATEGORY.music) {
-        musicFeed.push(result);
-      } else if (category === CATEGORY.book) {
-        bookFeed.push(result);
-      }
-    });
+    const category = getCategory(item.title, item.link);
+    const dom = new JSDOM(item.content.trim());
+    const contents = [...dom.window.document.querySelectorAll('td p')];
+    let rating = contents.filter(el => el.textContent.startsWith('推荐'));
+    if (rating.length) {
+      rating = rating[0].textContent.replace(/^推荐: /, '').trim();
+      rating = RATING_TEXT[rating];
+    }
+    let comment = contents.filter(el => el.textContent.startsWith('备注'));
+    if (comment.length) {
+      comment = comment[0].textContent.replace(/^备注: /, '').trim();
+    }
+    const result = {
+      link: item.link,
+      rating: typeof rating === 'number' ? rating : null,
+      comment: typeof comment === 'string' ? comment : null, // 备注：XXX -> 短评
+      time: item.isoDate, // '2021-05-30T06:49:34.000Z'
+    };
+    console.log(result);
+    if (category === CATEGORY.movie) {
+      movieFeed.push(result);
+    } else if (category === CATEGORY.music) {
+      musicFeed.push(result);
+    } else if (category === CATEGORY.book) {
+      bookFeed.push(result);
+    }
+  });
 
   if (feed.length === 0) {
     console.log('No new items.');
@@ -122,7 +123,7 @@ async function handleFeed(feed, category) {
       itemData = await fetchItem(link, category);
       itemData[DB_PROPERTIES.ITEM_LINK] = link;
       itemData[DB_PROPERTIES.RATING] = item.rating;
-      itemData[DB_PROPERTIES.RATING_DATE] = dayjs(item.isoDate).format('YYYY-MM-DD');
+      itemData[DB_PROPERTIES.RATING_DATE] = dayjs(item.time).format('YYYY-MM-DD');
       itemData[DB_PROPERTIES.COMMENTS] = item.comment;
     } catch (error) {
       console.error(link, error);
@@ -240,7 +241,7 @@ async function fetchItem(link, category) {
 }
 
 async function addToNotion(itemData, category) {
-  console.log('Goint to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.TITLE]);
+  console.log('Going to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.TITLE]);
   try {
     // @todo: refactor this to add property value generator by value type
     let properties = {
