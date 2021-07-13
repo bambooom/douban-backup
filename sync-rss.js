@@ -58,7 +58,6 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
       comment: typeof comment === 'string' ? comment : null, // 备注：XXX -> 短评
       time: item.isoDate, // '2021-05-30T06:49:34.000Z'
     };
-    console.log(result);
     if (category === CATEGORY.movie) {
       movieFeed.push(result);
     } else if (category === CATEGORY.music) {
