@@ -22,7 +22,7 @@
   '我的短评': '5星打的绝对不是剧情！为建国，为toma，为一众cast就  是如此任性ˊ_>ˋ(1 有用)',
   '上映日期': '2015/01/16',
   '制片国家': '日本',
-  '条目链接': 'https://movie.douban.com/subject/ 25953663/'
+  '条目链接': 'https://movie.douban.com/subject/25953663/'
 }
   </pre>
 </details>
