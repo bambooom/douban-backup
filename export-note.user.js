@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name             豆瓣日记导出工具
 // @namespace        https://www.douban.com/people/MoNoMilky/
-// @version          0.2
+// @version          0.2.1
 // @description      将豆瓣日记导出为 markdown
 // @author           Bambooom
 // @icon             https://www.google.com/s2/favicons?domain=douban.com
@@ -230,12 +230,14 @@
     db.notes.toArray().then(function (all) {
       all.map(function(item) {
         delete item.id;
+        var date = item.datetime.split(' ')[0];
         var frontmatter = '---\n'
           + 'layout: post\n'
           + 'title: ' + item.title + '\n'
-          + 'date: ' + item.datetime.split(' ')[0] + '\n' // keep date only
-          + 'disqus: y\n---\n\n';
-        zip.file(item.linkid + '-' + item.title + '.md', frontmatter + item.md);
+          + 'date: ' + date + '\n' // keep date only
+          + 'disqus: y\n---\n\n'
+          + 'original link: https://www.douban.com/note/' + item.linkid + '/\n\n';
+        zip.file(date + '-' + item.title + '.md', frontmatter + item.md);
       });
 
       zip.generateAsync({type:"blob"}).then(function(content) {
