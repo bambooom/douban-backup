@@ -40,7 +40,7 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
 
   feed = feed.items.filter(item => done.test(item.title)); // care for done status items only for now
   feed.forEach(item => {
-    const category = getCategory(item.title, item.link);
+    const {category, id} = getCategoryAndId(item.title, item.link);
     const dom = new JSDOM(item.content.trim());
     const contents = [...dom.window.document.querySelectorAll('td p')];
     let rating = contents.filter(el => el.textContent.startsWith('推荐'));
@@ -53,6 +53,7 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
       comment = comment[0].textContent.replace(/^备注: /, '').trim();
     }
     const result = {
+      id,
       link: item.link,
       rating: typeof rating === 'number' ? rating : null,
       comment: typeof comment === 'string' ? comment : null, // 备注：XXX -> 短评
@@ -99,7 +100,9 @@ async function handleFeed(feed, category) {
       or: feed.map(item => ({
         property: DB_PROPERTIES.ITEM_LINK,
         url: {
-          equals: item.link,
+          contains: item.id,
+          // use id to check whether an item is already inserted, better than url
+          // as url may be http/https, ending with or withour /
         },
       })),
     },
@@ -137,26 +140,32 @@ async function handleFeed(feed, category) {
   console.log('====================');
 }
 
-function getCategory(title, link) {
+function getCategoryAndId(title, link) {
   let m = title.match(done);
   m = m[1];
-  let res;
+  let res, id;
   switch (m) {
     case '看过':
       if (link.startsWith('http://movie.douban.com/')) {
         res = CATEGORY.movie; // "看过" maybe 舞台剧
+        id = link.match(/movie.douban.com\/subject\/(\d+)\/?/);
+        id = id[1]; // string
       }
       break;
     case '读过':
       res = CATEGORY.book;
+      id = link.match(/book.douban.com\/subject\/(\d+)\/?/);
+      id = id[1]; // string
       break;
     case '听过':
       res = CATEGORY.music;
+      id = link.match(/music.douban.com\/subject\/(\d+)\/?/);
+      id = id[1]; // string
       break;
     default:
       break;
   }
-  return res;
+  return {category: res, id};
 }
 
 function getDBID(category) {
