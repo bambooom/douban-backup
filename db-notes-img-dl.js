@@ -1,0 +1,56 @@
+const fs = require('fs');
+const path = require('path');
+const {promisify} = require('util');
+const download = require('image-downloader');
+const {sleep} = require('./util');
+// const pinyin = require("pinyin"); // no need to convert Chinese titles now
+
+const writeFile = promisify(fs.writeFile);
+const readFile = promisify(fs.readFile);
+const readDir = promisify(fs.readdir);
+const mkDir = promisify(fs.mkdir);
+
+const DIR = './douban-notes-20210714';
+const IMG_DIR = './assets/images';
+const IMG_PREFIX = '/assets/images/'; // for my blog setting
+
+(async () => {
+  const notesFiles = await readDir(DIR);
+  let COUNT = 0;
+  for (const notesFile of notesFiles) {
+    let basename = path.basename(notesFile); // 2020-07-08-filename.md
+    basename = basename.match(/^\d{4}-\d{2}-\d{2}-(.+)\.md$/);
+    basename = basename[1]; // filename, no .md
+    basename = basename.replace(/\s/g, '-'); // `filename`, use as image folder name
+
+    let file = await readFile(path.resolve(__dirname, `${DIR}/${notesFile}`), 'utf8');
+    let imgs = [];
+    file = file.replace(/!\[.*?\]\((.+?)\)/g, function (whole, url) {
+      imgs.push(url);
+      let name = url.match(/\/([^/]*\.(?:jpg|webp))$/); // last p12344.jpg
+      return `${IMG_PREFIX}${basename}/${name[1]}`; // last is pic name
+    });
+    if (imgs.length > 0) {
+      console.log(basename, ' has ', imgs.length, ' images.');
+      const imgDir = path.resolve(__dirname, path.join(IMG_DIR, basename));
+      await mkDir(imgDir, { recursive: true }); // mkdir for images
+
+      for (const url of imgs) {
+        await download.img({
+          url,
+          dest: imgDir,
+        })
+          .then(({filename}) => {
+            console.log('Saved to', filename);
+          })
+          .catch(console.error);
+        COUNT++;
+        if (COUNT % 100 === 0) {
+          console.log(`Already ${COUNT} images, wait for 3 seconds...`);
+          await sleep(3000);
+        }
+      }
+      await writeFile(path.resolve(__dirname, `${DIR}/${notesFile}`), file, 'utf8'); // write to the file
+    }
+  }
+})();
