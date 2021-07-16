@@ -10,13 +10,14 @@ const readFile = promisify(fs.readFile);
 const readDir = promisify(fs.readdir);
 const mkDir = promisify(fs.mkdir);
 
-const DIR = './douban-notes-20210714';
+const DIR = './douban-notes-20210716';
+// const DIR = './douban-notes-test'; // for test
 const IMG_DIR = './assets/images';
 const IMG_PREFIX = '/assets/images/'; // for my blog setting
 
 (async () => {
   const notesFiles = await readDir(DIR);
-  let COUNT = 0;
+  let COUNT = 0, FAILED_URLS = [];
   for (const notesFile of notesFiles) {
     let basename = path.basename(notesFile); // 2020-07-08-filename.md
     basename = basename.match(/^\d{4}-\d{2}-\d{2}-(.+)\.md$/);
@@ -25,26 +26,30 @@ const IMG_PREFIX = '/assets/images/'; // for my blog setting
 
     let file = await readFile(path.resolve(__dirname, `${DIR}/${notesFile}`), 'utf8');
     let imgs = [];
-    file = file.replace(/!\[.*?\]\((.+?)\)/g, function (whole, url) {
+    file = file.replace(/!\[(.*?)\]\((.+?)\)/g, function (whole, desc, url) {
       imgs.push(url);
       let name = url.match(/\/([^/]*\.(?:jpg|webp))$/); // last p12344.jpg
-      return `${IMG_PREFIX}${basename}/${name[1]}`; // last is pic name
+      return `![${desc}](${IMG_PREFIX}${basename}/${name[1]})`; // last is pic name
     });
     if (imgs.length > 0) {
       console.log(basename, ' has ', imgs.length, ' images.');
       const imgDir = path.resolve(__dirname, path.join(IMG_DIR, basename));
-      await mkDir(imgDir, { recursive: true }); // mkdir for images
+      await mkDir(imgDir, {recursive: true}); // mkdir for images
 
       for (const url of imgs) {
-        await download.img({
+        await download.image({
           url,
           dest: imgDir,
         })
           .then(({filename}) => {
             console.log('Saved to', filename);
+            COUNT++;
           })
-          .catch(console.error);
-        COUNT++;
+          .catch(() => {
+            let msg = 'Failed to download ' + url + ' which belongs to ' + basename;
+            FAILED_URLS.push(msg);
+          });
+
         if (COUNT % 100 === 0) {
           console.log(`Already ${COUNT} images, wait for 3 seconds...`);
           await sleep(3000);
@@ -53,4 +58,5 @@ const IMG_PREFIX = '/assets/images/'; // for my blog setting
       await writeFile(path.resolve(__dirname, `${DIR}/${notesFile}`), file, 'utf8'); // write to the file
     }
   }
+  console.log(FAILED_URLS);
 })();
