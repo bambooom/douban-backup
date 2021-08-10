@@ -33,4 +33,4 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
-    - run: node sync-rss.js
+    - run: node sync-rss.js || exit 1

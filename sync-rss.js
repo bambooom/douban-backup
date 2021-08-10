@@ -34,7 +34,13 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
 
 (async () => {
   console.log('Refreshing feeds from RSS...');
-  let feed = await parser.parseURL(`https://www.douban.com/feed/people/${DOUBAN_USER_ID}/interests`);
+  let feed;
+  try {
+    feed = await parser.parseURL(`https://www.douban.com/feed/people/${DOUBAN_USER_ID}/interests`);
+  } catch (error) {
+    console.error('Failed to parse RSS url: ', error);
+    process.exit(1);
+  }
 
   let movieFeed = [], musicFeed = [], bookFeed = [];
 
@@ -74,13 +80,28 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
   }
 
   if (movieFeed.length) {
-    await handleFeed(movieFeed, CATEGORY.movie);
+    try {
+      await handleFeed(movieFeed, CATEGORY.movie);
+    } catch (error) {
+      console.error('Failed to handle movie feed. ', error);
+      process.exit(1);
+    }
   }
   if (musicFeed.length) {
-    await handleFeed(musicFeed, CATEGORY.music);
+    try {
+      await handleFeed(musicFeed, CATEGORY.music);
+    } catch (error) {
+      console.error('Failed to handle music feed. ', error);
+      process.exit(1);
+    }
   }
   if (bookFeed.length) {
-    await handleFeed(bookFeed, CATEGORY.book);
+    try {
+      await handleFeed(bookFeed, CATEGORY.book);
+    } catch (error) {
+      console.error('Failed to handle book feed. ', error);
+      process.exit(1);
+    }
   }
 
   console.log('All feeds are handled.');
@@ -94,19 +115,25 @@ async function handleFeed(feed, category) {
 
   console.log(`Handling ${category} feeds...`);
   // query current db to check whether already inserted
-  const filtered = await notion.databases.query({
-    database_id: getDBID(category),
-    filter: {
-      or: feed.map(item => ({
-        property: DB_PROPERTIES.ITEM_LINK,
-        url: {
-          contains: item.id,
-          // use id to check whether an item is already inserted, better than url
-          // as url may be http/https, ending with or withour /
-        },
-      })),
-    },
-  });
+  let filtered;
+  try {
+    filtered = await notion.databases.query({
+      database_id: getDBID(category),
+      filter: {
+        or: feed.map(item => ({
+          property: DB_PROPERTIES.ITEM_LINK,
+          url: {
+            contains: item.id,
+            // use id to check whether an item is already inserted, better than url
+            // as url may be http/https, ending with or withour /
+          },
+        })),
+      },
+    });
+  } catch (error) {
+    console.error(`Failed to query ${category} database to check already inserted items. `, error);
+    process.exit(1);
+  }
 
   if (filtered.results.length) {
     feed = feed.filter(item => {
@@ -386,9 +413,20 @@ async function addToNotion(itemData, category) {
       };
     }
 
+    const dbid = getDBID(category);
+    const db = await notion.databases.retrieve({database_id: dbid});
+    const columns = Object.keys(db.properties);
+    // remove cols which are not in the current database
+    const propKeys = Object.keys(properties);
+    propKeys.map(prop => {
+      if (columns.indexOf(prop) < 0) {
+        delete properties[prop];
+      }
+    });
+
     const response = await notion.pages.create({
       parent: {
-        database_id: getDBID(category),
+        database_id: dbid,
       },
       // fill in properties by the format: https://developers.notion.com/reference/page#page-property-value
       properties,
