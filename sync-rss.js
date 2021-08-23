@@ -322,8 +322,12 @@ async function addToNotion(itemData, category) {
         [DB_PROPERTIES.POSTER]: {
           files: [
             {
+              // file: {}
               name: itemData[DB_PROPERTIES.POSTER],
-            }
+              external: { // need external:{} format to insert the files property, but still not successful
+                url: itemData[DB_PROPERTIES.POSTER],
+              },
+            },
           ],
         },
         [DB_PROPERTIES.YEAR]: {
