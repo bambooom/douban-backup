@@ -1,6 +1,6 @@
 const DB_PROPERTIES = {
   // movie
-  POSTER: '海报',
+  POSTER: '海报', // movie, game, drama
   TITLE: '标题', // common
   RATING: '个人评分', // common
   RATING_DATE: '打分日期', // common
@@ -8,11 +8,11 @@ const DB_PROPERTIES = {
   YEAR: '上映年份',
   DIRECTORS: '导演',
   ACTORS: '主演',
-  GENRE: '类型',
+  GENRE: '类型', // movie, game, drama
   ITEM_LINK: '条目链接', // common
   IMDB_LINK: 'IMDb 链接',
   // music
-  RELEASE_DATE: '发行日期',
+  RELEASE_DATE: '发行日期', // music and game
   MUSICIAN: '音乐家',
   // book
   PUBLICATION_DATE: '出版日期',

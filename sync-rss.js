@@ -17,11 +17,13 @@ const RATING_TEXT = {
   '推荐': 4,
   '力荐': 5,
 };
-const done = /^(看过|听过|读过)/;
+const done = /^(看过|听过|读过|玩过)/;
 const CATEGORY = {
   movie: 'movie',
   music: 'music',
   book: 'book',
+  game: 'game',
+  drama: 'drama',
 };
 
 const DOUBAN_USER_ID = process.env.DOUBAN_USER_ID;
@@ -31,6 +33,8 @@ const notion = new Client({
 const movieDBID = process.env.NOTION_MOVIE_DATABASE_ID;
 const musicDBID = process.env.NOTION_MUSIC_DATABASE_ID;
 const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
+const gameDBID = process.env.NOTION_GAME_DATABASE_ID;
+const dramaDBID = process.env.NOTION_DRAMA_DATABASE_ID;
 
 (async () => {
   console.log('Refreshing feeds from RSS...');
@@ -42,7 +46,7 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
     process.exit(1);
   }
 
-  let movieFeed = [], musicFeed = [], bookFeed = [];
+  let feedData = {};
 
   feed = feed.items.filter(item => done.test(item.title)); // care for done status items only for now
   feed.forEach(item => {
@@ -65,13 +69,10 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
       comment: typeof comment === 'string' ? comment : null, // 备注：XXX -> 短评
       time: item.isoDate, // '2021-05-30T06:49:34.000Z'
     };
-    if (category === CATEGORY.movie) {
-      movieFeed.push(result);
-    } else if (category === CATEGORY.music) {
-      musicFeed.push(result);
-    } else if (category === CATEGORY.book) {
-      bookFeed.push(result);
+    if (!feedData[category]) {
+      feedData[category] = [];
     }
+    feedData[category].push(result);
   });
 
   if (feed.length === 0) {
@@ -79,28 +80,15 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
     return;
   }
 
-  if (movieFeed.length) {
-    try {
-      await handleFeed(movieFeed, CATEGORY.movie);
-    } catch (error) {
-      console.error('Failed to handle movie feed. ', error);
-      process.exit(1);
-    }
-  }
-  if (musicFeed.length) {
-    try {
-      await handleFeed(musicFeed, CATEGORY.music);
-    } catch (error) {
-      console.error('Failed to handle music feed. ', error);
-      process.exit(1);
-    }
-  }
-  if (bookFeed.length) {
-    try {
-      await handleFeed(bookFeed, CATEGORY.book);
-    } catch (error) {
-      console.error('Failed to handle book feed. ', error);
-      process.exit(1);
+  const categoryKeys = Object.keys(feedData);
+  if (categoryKeys.length) {
+    for (const cateKey of categoryKeys) {
+      try {
+        await handleFeed(feedData[cateKey], cateKey);
+      } catch (error) {
+        console.error(`Failed to handle ${cateKey} feed. `, error);
+        process.exit(1);
+      }
     }
   }
 
@@ -175,18 +163,27 @@ function getCategoryAndId(title, link) {
     case '看过':
       if (link.startsWith('http://movie.douban.com/')) {
         res = CATEGORY.movie; // "看过" maybe 舞台剧
-        id = link.match(/movie.douban.com\/subject\/(\d+)\/?/);
+        id = link.match(/movie\.douban\.com\/subject\/(\d+)\/?/);
+        id = id[1]; // string
+      } else {
+        res = CATEGORY.drama; // 舞台剧
+        id = link.match(/www\.douban\.com\/location\/drama\/(\d+)\/?/);
         id = id[1]; // string
       }
       break;
     case '读过':
       res = CATEGORY.book;
-      id = link.match(/book.douban.com\/subject\/(\d+)\/?/);
+      id = link.match(/book\.douban\.com\/subject\/(\d+)\/?/);
       id = id[1]; // string
       break;
     case '听过':
       res = CATEGORY.music;
-      id = link.match(/music.douban.com\/subject\/(\d+)\/?/);
+      id = link.match(/music\.douban\.com\/subject\/(\d+)\/?/);
+      id = id[1]; // string
+      break;
+    case '玩过':
+      res = CATEGORY.game;
+      id = link.match(/www\.douban\.com\/game\/(\d+)\/?/);
       id = id[1]; // string
       break;
     default:
@@ -206,6 +203,12 @@ function getDBID(category) {
       break;
     case CATEGORY.book:
       id = bookDBID;
+      break;
+    case CATEGORY.game:
+      id = gameDBID;
+      break;
+    case CATEGORY.drama:
+      id = dramaDBID;
       break;
     default:
       break;
@@ -270,6 +273,30 @@ async function fetchItem(link, category) {
         itemData[DB_PROPERTIES.ISBN] = Number(nextText);
       }
     });
+
+  // game item page
+  } else if (category === CATEGORY.game) {
+    itemData[DB_PROPERTIES.TITLE] = dom.window.document.querySelector('#wrapper #content h1').textContent.trim();
+    itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('.item-subject-info .pic img').src.replace(/\.webp$/, '.jpg');
+    const gameInfo = dom.window.document.querySelector('#content .game-attr');
+    const dts = [...gameInfo.querySelectorAll('dt')].filter(i => i.textContent.startsWith('类型') || i.textContent.startsWith('发行日期'));
+    if (dts.length) {
+      dts.forEach(dt => {
+        if (dt.textContent.startsWith('类型')) {
+          itemData[DB_PROPERTIES.GENRE] = [...dt.nextElementSibling.querySelectorAll('a')].map(a => a.textContent.trim()); //array
+        } else if (dt.textContent.startsWith('发行日期')) {
+          let date = dt.nextElementSibling.textContent.trim();
+          itemData[DB_PROPERTIES.RELEASE_DATE] = dayjs(date).format('YYYY-MM-DD');
+        }
+      })
+    }
+
+  // drama item page
+  } else if (category === CATEGORY.drama) {
+    itemData[DB_PROPERTIES.TITLE] = dom.window.document.querySelector('#content .drama-info .meta h1').textContent.trim();
+    let genre = dom.window.document.querySelector('#content .drama-info .meta [itemprop="genre"]').textContent.trim();
+    itemData[DB_PROPERTIES.GENRE] = [genre];
+    itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('.drama-info .pic img').src.replace(/\.webp$/, '.jpg');
   }
 
   return itemData;
@@ -278,7 +305,7 @@ async function fetchItem(link, category) {
 async function addToNotion(itemData, category) {
   console.log('Going to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.TITLE]);
   try {
-    // @todo: refactor this to add property value generator by value type
+    // @TODO: refactor this to add property value generator by value type
     let properties = {
       [DB_PROPERTIES.TITLE]: {
         title: [
@@ -413,6 +440,51 @@ async function addToNotion(itemData, category) {
         },
         [DB_PROPERTIES.ISBN]: {
           number: itemData[DB_PROPERTIES.ISBN] || null,
+        },
+      };
+    } else if (category === CATEGORY.game) {
+      properties = {
+        ...properties,
+        [DB_PROPERTIES.RELEASE_DATE]: {
+          date: {
+            start: itemData[DB_PROPERTIES.RELEASE_DATE],
+          },
+        },
+        [DB_PROPERTIES.GENRE]: { // array
+          'multi_select': (itemData[DB_PROPERTIES.GENRE] || []).map(g => ({
+            name: g,
+          })),
+        },
+        [DB_PROPERTIES.POSTER]: {
+          files: [
+            {
+              // file: {}
+              name: itemData[DB_PROPERTIES.POSTER],
+              external: { // need external:{} format to insert the files property, but still not successful
+                url: itemData[DB_PROPERTIES.POSTER],
+              },
+            },
+          ],
+        },
+      };
+    } else if (category === CATEGORY.drama) {
+      properties = {
+        ...properties,
+        [DB_PROPERTIES.GENRE]: { // array
+          'multi_select': (itemData[DB_PROPERTIES.GENRE] || []).map(g => ({
+            name: g,
+          })),
+        },
+        [DB_PROPERTIES.POSTER]: {
+          files: [
+            {
+              // file: {}
+              name: itemData[DB_PROPERTIES.POSTER],
+              external: { // need external:{} format to insert the files property, but still not successful
+                url: itemData[DB_PROPERTIES.POSTER],
+              },
+            },
+          ],
         },
       };
     }
