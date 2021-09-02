@@ -6,7 +6,7 @@ const jsdom = require("jsdom");
 const {JSDOM} = jsdom;
 const Parser = require('rss-parser');
 const parser = new Parser();
-const {DB_PROPERTIES, sleep} = require('./util');
+const {DB_PROPERTIES, PropertyType, sleep} = require('./util');
 
 config();
 
@@ -226,7 +226,7 @@ async function fetchItem(link, category) {
   if (category === CATEGORY.movie) {
     itemData[DB_PROPERTIES.TITLE] = dom.window.document.querySelector('#content h1 [property="v:itemreviewed"]').textContent.trim();
     itemData[DB_PROPERTIES.YEAR] = dom.window.document.querySelector('#content h1 .year').textContent.slice(1, -1);
-    itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('#mainpic img').src.replace(/\.webp$/, '.jpg');
+    itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('#mainpic img')?.src.replace(/\.webp$/, '.jpg');
     itemData[DB_PROPERTIES.DIRECTORS] = dom.window.document.querySelector('#info .attrs').textContent;
     itemData[DB_PROPERTIES.ACTORS] = [...dom.window.document.querySelectorAll('#info .actor .attrs a')].slice(0, 5).map(i => i.textContent).join(' / ');
     itemData[DB_PROPERTIES.GENRE] = [...dom.window.document.querySelectorAll('#info [property="v:genre"]')].map(i => i.textContent); // array
@@ -238,6 +238,7 @@ async function fetchItem(link, category) {
   // music item page
   } else if (category === CATEGORY.music) {
     itemData[DB_PROPERTIES.TITLE] = dom.window.document.querySelector('#wrapper h1 span').textContent.trim();
+    itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('#mainpic img')?.src.replace(/\.webp$/, '.jpg');
     let info = [...dom.window.document.querySelectorAll('#info span.pl')];
     let release = info.filter(i => i.textContent.trim().startsWith('发行时间'));
     if (release.length) {
@@ -252,6 +253,7 @@ async function fetchItem(link, category) {
   // book item page
   } else if (category === CATEGORY.book) {
     itemData[DB_PROPERTIES.TITLE] = dom.window.document.querySelector('#wrapper h1 [property="v:itemreviewed"]').textContent.trim();
+    itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('#mainpic img')?.src.replace(/\.webp$/, '.jpg');
     let info = [...dom.window.document.querySelectorAll('#info span.pl')];
     info.forEach(i => {
       let text = i.textContent.trim();
@@ -277,7 +279,7 @@ async function fetchItem(link, category) {
   // game item page
   } else if (category === CATEGORY.game) {
     itemData[DB_PROPERTIES.TITLE] = dom.window.document.querySelector('#wrapper #content h1').textContent.trim();
-    itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('.item-subject-info .pic img').src.replace(/\.webp$/, '.jpg');
+    itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('.item-subject-info .pic img')?.src.replace(/\.webp$/, '.jpg');
     const gameInfo = dom.window.document.querySelector('#content .game-attr');
     const dts = [...gameInfo.querySelectorAll('dt')].filter(i => i.textContent.startsWith('类型') || i.textContent.startsWith('发行日期'));
     if (dts.length) {
@@ -296,198 +298,99 @@ async function fetchItem(link, category) {
     itemData[DB_PROPERTIES.TITLE] = dom.window.document.querySelector('#content .drama-info .meta h1').textContent.trim();
     let genre = dom.window.document.querySelector('#content .drama-info .meta [itemprop="genre"]').textContent.trim();
     itemData[DB_PROPERTIES.GENRE] = [genre];
-    itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('.drama-info .pic img').src.replace(/\.webp$/, '.jpg');
+    itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('.drama-info .pic img')?.src.replace(/\.webp$/, '.jpg');
   }
 
   return itemData;
+}
+
+function getPropertyValye(value, type, key) {
+  let res = null;
+  switch (type) {
+    case 'title':
+      res = {
+        title: [
+          {
+            text: {
+              content: value,
+            },
+          },
+        ],
+      };
+      break;
+    case 'file':
+      res = {
+        files: [
+          {
+            // file: {}
+            name: value,
+            external: { // need external:{} format to insert the files property, but still not successful
+              url: value,
+            },
+          },
+        ],
+      };
+      break;
+    case 'date':
+      res = {
+        date: {
+          start: value,
+        },
+      };
+      break;
+    case 'multi_select':
+      res = key === DB_PROPERTIES.RATING ? {
+        'multi_select': value ? [
+          {
+            name: value.toString(),
+          },
+        ] : [],
+      } : {
+        'multi_select': (value || []).map(g => ({
+          name: g, // @Q: if the option is not created before, can not use it directly here?
+        })),
+      };
+      break;
+    case 'rich_text':
+      res = {
+        'rich_text': [
+          {
+            type: 'text',
+            text: {
+              content: value || '',
+            },
+          },
+        ],
+      }
+      break;
+    case 'number':
+      res = {
+        number: value ? Number(value) : null,
+      };
+      break;
+    case 'url':
+      res = {
+        url: value || url,
+      };
+      break;
+    default:
+      break;
+  }
+
+  return res;
 }
 
 async function addToNotion(itemData, category) {
   console.log('Going to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.TITLE]);
   try {
     // @TODO: refactor this to add property value generator by value type
-    let properties = {
-      [DB_PROPERTIES.TITLE]: {
-        title: [
-          {
-            text: {
-              content: itemData[DB_PROPERTIES.TITLE],
-            },
-          },
-        ]
-      },
-      [DB_PROPERTIES.RATING]: {
-        'multi_select': itemData[DB_PROPERTIES.RATING] ? [
-          {
-            name: itemData[DB_PROPERTIES.RATING].toString(),
-          },
-        ] : [], // if no rating, then this multi_select should be an empty array
-      },
-      [DB_PROPERTIES.RATING_DATE]: {
-        date: {
-          start: itemData[DB_PROPERTIES.RATING_DATE],
-        },
-      },
-      [DB_PROPERTIES.COMMENTS]: {
-        'rich_text': [
-          {
-            type: 'text',
-            text: {
-              content: itemData[DB_PROPERTIES.COMMENTS] || '',
-            },
-          },
-        ],
-      },
-      [DB_PROPERTIES.ITEM_LINK]: {
-        url: itemData[DB_PROPERTIES.ITEM_LINK],
-      },
-    };
-
-    if (category === CATEGORY.movie) {
-      properties = {
-        ...properties,
-        [DB_PROPERTIES.POSTER]: {
-          files: [
-            {
-              // file: {}
-              name: itemData[DB_PROPERTIES.POSTER],
-              external: { // need external:{} format to insert the files property, but still not successful
-                url: itemData[DB_PROPERTIES.POSTER],
-              },
-            },
-          ],
-        },
-        [DB_PROPERTIES.YEAR]: {
-          number: Number(itemData[DB_PROPERTIES.YEAR]),
-        },
-        [DB_PROPERTIES.DIRECTORS]: {
-          'rich_text': [
-            {
-              type: 'text',
-              text: {
-                content: itemData[DB_PROPERTIES.DIRECTORS],
-              },
-            },
-          ],
-        },
-        [DB_PROPERTIES.ACTORS]: {
-          'rich_text': [
-            {
-              type: 'text',
-              text: {
-                content: itemData[DB_PROPERTIES.ACTORS],
-              },
-            },
-          ],
-        },
-        [DB_PROPERTIES.GENRE]: { // array
-          'multi_select': (itemData[DB_PROPERTIES.GENRE] || []).map(g => ({
-            name: g, // @Q: if the option is not created before, can not use it directly here?
-          })),
-        },
-        [DB_PROPERTIES.IMDB_LINK]: {
-          url: itemData[DB_PROPERTIES.IMDB_LINK] || null,
-        },
-      };
-
-    } else if (category === CATEGORY.music) {
-      properties = {
-        ...properties,
-        [DB_PROPERTIES.RELEASE_DATE]: {
-          date: {
-            start: itemData[DB_PROPERTIES.RELEASE_DATE],
-          },
-        },
-        [DB_PROPERTIES.MUSICIAN]: {
-          'rich_text': [
-            {
-              type: 'text',
-              text: {
-                content: itemData[DB_PROPERTIES.MUSICIAN],
-              },
-            },
-          ],
-        },
-      };
-
-    } else if (category === CATEGORY.book) {
-      properties = {
-        ...properties,
-        [DB_PROPERTIES.PUBLICATION_DATE]: {
-          date: {
-            start: itemData[DB_PROPERTIES.PUBLICATION_DATE],
-          },
-        },
-        [DB_PROPERTIES.PUBLISHING_HOUSE]: {
-          'rich_text': [
-            {
-              type: 'text',
-              text: {
-                content: itemData[DB_PROPERTIES.PUBLISHING_HOUSE] || '',
-              },
-            },
-          ],
-        },
-        [DB_PROPERTIES.WRITER]: {
-          'rich_text': [
-            {
-              type: 'text',
-              text: {
-                content: itemData[DB_PROPERTIES.WRITER] || '',
-              },
-            },
-          ],
-        },
-        [DB_PROPERTIES.ISBN]: {
-          number: itemData[DB_PROPERTIES.ISBN] || null,
-        },
-      };
-    } else if (category === CATEGORY.game) {
-      properties = {
-        ...properties,
-        [DB_PROPERTIES.RELEASE_DATE]: {
-          date: {
-            start: itemData[DB_PROPERTIES.RELEASE_DATE],
-          },
-        },
-        [DB_PROPERTIES.GENRE]: { // array
-          'multi_select': (itemData[DB_PROPERTIES.GENRE] || []).map(g => ({
-            name: g,
-          })),
-        },
-        [DB_PROPERTIES.POSTER]: {
-          files: [
-            {
-              // file: {}
-              name: itemData[DB_PROPERTIES.POSTER],
-              external: { // need external:{} format to insert the files property, but still not successful
-                url: itemData[DB_PROPERTIES.POSTER],
-              },
-            },
-          ],
-        },
-      };
-    } else if (category === CATEGORY.drama) {
-      properties = {
-        ...properties,
-        [DB_PROPERTIES.GENRE]: { // array
-          'multi_select': (itemData[DB_PROPERTIES.GENRE] || []).map(g => ({
-            name: g,
-          })),
-        },
-        [DB_PROPERTIES.POSTER]: {
-          files: [
-            {
-              // file: {}
-              name: itemData[DB_PROPERTIES.POSTER],
-              external: { // need external:{} format to insert the files property, but still not successful
-                url: itemData[DB_PROPERTIES.POSTER],
-              },
-            },
-          ],
-        },
-      };
-    }
+    let properties = {};
+    const keys = Object.keys(DB_PROPERTIES);
+    keys.forEach(key => {
+      if (itemData[DB_PROPERTIES[key]]) {
+        properties[DB_PROPERTIES[key]] = getPropertyValye(itemData[DB_PROPERTIES[key]], PropertyType[key], DB_PROPERTIES[key]);
+      }
+    });
 
     const dbid = getDBID(category);
     const db = await notion.databases.retrieve({database_id: dbid});
