@@ -105,7 +105,6 @@ async function handleFeed(feed, category) {
   // query current db to check whether already inserted
   let filtered;
   try {
-    console.log('category ', category, ': ', getDBID(category));
     filtered = await notion.databases.query({
       database_id: getDBID(category),
       filter: {

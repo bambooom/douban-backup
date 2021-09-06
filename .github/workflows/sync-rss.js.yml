@@ -3,14 +3,11 @@
 
 name: sync-rss
 
-# on:
-#   schedule:
-#     # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events
-#     # Runs every 6 hours
-#     - cron:  '0 */6 * * *'
-
 on:
-  workflow_dispatch: # try to manual
+  schedule:
+    # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events
+    # Runs every 6 hours
+    - cron:  '0 */6 * * *'
 
 jobs:
   build:
@@ -27,6 +24,8 @@ jobs:
       NOTION_MOVIE_DATABASE_ID: ${{ secrets.NOTION_MOVIE_DATABASE_ID }}
       NOTION_MUSIC_DATABASE_ID: ${{ secrets.NOTION_MUSIC_DATABASE_ID }}
       NOTION_BOOK_DATABASE_ID: ${{ secrets.NOTION_BOOK_DATABASE_ID }}
+      NOTION_GAME_DATABASE_ID: ${{ secrets.NOTION_GAME_DATABASE_ID }}
+      NOTION_DRAMA_DATABASE_ID: ${{ secrets.NOTION_DRAMA_DATABASE_ID }}
       DOUBAN_USER_ID: ${{ secrets.DOUBAN_USER_ID }}
 
     steps:
