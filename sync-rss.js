@@ -107,13 +107,18 @@ async function handleFeed(feed, category) {
     console.log(`No new ${category} feeds.`);
     return;
   }
+  const dbID = getDBID(category);
+  if (!dbID && (category === CATEGORY.drama || category === CATEGORY.game)) {
+    console.log(`No notion database id for ${category}`);
+    return;
+  }
 
   console.log(`Handling ${category} feeds...`);
   // query current db to check whether already inserted
   let filtered;
   try {
     filtered = await notion.databases.query({
-      database_id: getDBID(category),
+      database_id: dbID,
       filter: {
         or: feed.map(item => ({
           property: DB_PROPERTIES.ITEM_LINK,
@@ -400,6 +405,9 @@ async function addToNotion(itemData, category) {
     });
 
     const dbid = getDBID(category);
+    if (!dbid) {
+      throw new Error('No databse id found for category: ' + category);
+    }
     const db = await notion.databases.retrieve({database_id: dbid});
     const columns = Object.keys(db.properties);
     // remove cols which are not in the current database
