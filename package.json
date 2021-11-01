@@ -22,7 +22,7 @@
     "fast-csv": "^4.3.6",
     "got": "^11.8.2",
     "image-downloader": "^4.0.3",
-    "jsdom": "^18.0.0",
+    "jsdom": "^18.0.1",
     "rss-parser": "^3.12.0"
   }
 }
