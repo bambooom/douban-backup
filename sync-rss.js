@@ -394,7 +394,6 @@ function getPropertyValye(value, type, key) {
 
 async function addToNotion(itemData, category) {
   console.log('Going to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.TITLE]);
-  console.log('Going to insert ', properties[DB_PROPERTIES.POSTER]?.files[0]?.external?.url || '';
   try {
     // @TODO: refactor this to add property value generator by value type
     let properties = {};
@@ -427,12 +426,12 @@ async function addToNotion(itemData, category) {
         type: 'emoji',
         emoji: EMOJI[category],
       },
-      cover: {
-        type: 'external',
-        external: {
-          url: properties[DB_PROPERTIES.POSTER]?.files[0]?.external?.url || '', // use poster for the page cover
-        },
-      },
+//       cover: {
+//         type: 'external',
+//         external: {
+//           url: properties[DB_PROPERTIES.POSTER]?.files[0]?.external?.url || '', // use poster for the page cover
+//         },
+//       },
       // fill in properties by the format: https://developers.notion.com/reference/page#page-property-value
       properties,
     });
