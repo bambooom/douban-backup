@@ -394,6 +394,7 @@ function getPropertyValye(value, type, key) {
 
 async function addToNotion(itemData, category) {
   console.log('Going to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.TITLE]);
+  console.log('Going to insert ', properties[DB_PROPERTIES.POSTER]?.files[0]?.external?.url || '';
   try {
     // @TODO: refactor this to add property value generator by value type
     let properties = {};
