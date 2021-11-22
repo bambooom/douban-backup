@@ -20,7 +20,7 @@
     "dayjs": "^1.10.7",
     "dotenv": "^10.0.0",
     "fast-csv": "^4.3.6",
-    "got": "^11.8.2",
+    "got": "^11.8.3",
     "image-downloader": "^4.0.3",
     "jsdom": "^18.1.0",
     "rss-parser": "^3.12.0"
