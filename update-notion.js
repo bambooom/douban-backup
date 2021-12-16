@@ -11,7 +11,7 @@ const {config} = require('dotenv');
 const csv = require('fast-csv');
 const {Client, LogLevel} = require("@notionhq/client");
 const dayjs = require('dayjs');
-const got = require('got');
+import got from "got";
 const jsdom = require("jsdom");
 const {JSDOM} = jsdom;
 const {DB_PROPERTIES, sleep} = require('./util');
