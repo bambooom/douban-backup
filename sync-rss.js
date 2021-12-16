@@ -429,7 +429,7 @@ async function addToNotion(itemData, category) {
       cover: {
         type: 'external',
         external: {
-          url: properties[DB_PROPERTIES.POSTER]?.files[0]?.external?.url || '', // use poster for the page cover
+          url: properties[DB_PROPERTIES.POSTER]?.files[0]?.external?.url || null, // use poster for the page cover, and cannot be empty string, can be null
         },
       },
       // fill in properties by the format: https://developers.notion.com/reference/page#page-property-value
