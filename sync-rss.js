@@ -259,7 +259,8 @@ async function fetchItem(link, category) {
     }
     let musician = info.filter(i => i.textContent.trim().startsWith('表演者'));
     if (musician.length) {
-      itemData[DB_PROPERTIES.MUSICIAN] = musician[0].textContent.replace('表演者:', '').trim();
+      itemData[DB_PROPERTIES.MUSICIAN] = musician[0].textContent.replace('表演者:', '').trim().split('\n').map(v => v.trim()).join('');
+      // split and trim to remove extra spaces, rich_text length limited to 2000
     }
 
   // book item page
