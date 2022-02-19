@@ -1,13 +1,17 @@
 // ==UserScript==
 // @name             豆瓣读书+电影+音乐+游戏+舞台剧导出工具
 // @namespace        https://www.douban.com/people/MoNoMilky/
-// @version          0.3.2
+// @version          0.4.0
 // @description      将读过/看过/听过/玩过的读书/电影/音乐/游戏/舞台剧条目分别导出为 csv 文件
 // @author           Bambooom
 // @match            https://book.douban.com/people/*/collect*
+// @match            https://book.douban.com/people/*/wish*
 // @match            https://movie.douban.com/people/*/collect*
+// @match            https://movie.douban.com/people/*/wish*
 // @match            https://music.douban.com/people/*/collect*
+// @match            https://music.douban.com/people/*/wish*
 // @match            https://www.douban.com/location/people/*/drama/collect*
+// @match            https://www.douban.com/location/people/*/drama/wish*
 // @match            https://www.douban.com/people/*
 // @require          https://unpkg.com/dexie@latest/dist/dexie.js
 // @grant            none
@@ -21,16 +25,16 @@
   var MOVIE = 'movie', BOOK = 'book', MUSIC = 'music', GAME = 'game', DRAMA = 'drama', people;
   /* global $, Dexie */
 
-  function getExportLink(type, people) { // type=book/movie/music
-    return 'https://' + type + '.douban.com/people/' + people + '/collect?start=0&sort=time&rating=all&filter=all&mode=list&export=1';
+  function getExportLink(type, people, isWish = false) { // type=book/movie/music, isWish=想读/想看/想听
+    return `https://${type}.douban.com/people/${people}/${isWish ? 'wish' : 'collect'}?start=0&sort=time&rating=all&filter=all&mode=list&export=1`;
   }
 
-  function getGameExportLink(people) { // type=game
-    return 'https://www.douban.com/people/' + people + '/games?action=collect&start=0&export=1';
+  function getGameExportLink(people, isWish = false) { // type=game
+    return `https://www.douban.com/people/${people}/games?action=${isWish ? 'wish' : 'collect'}&start=0&export=1`;
   }
 
-  function getDramaExportLink(people) { // type=game
-    return 'https://www.douban.com/location/people/' + people + '/drama/collect?start=0&sort=time&mode=grid&rating=all&export=1';
+  function getDramaExportLink(people, isWish = false) { // type=game
+    return `https://www.douban.com/location/people/${people}/drama/${isWish ? 'wish' : 'collect'}?start=0&sort=time&mode=grid&rating=all&export=1`;
   }
 
   if (location.href.indexOf('//www.douban.com/people/') > -1) {
@@ -38,10 +42,15 @@
     let match = location.href.match(/www\.douban\.com\/people\/([^/]+)\//);
     people = match ? match[1] : null;
     $('#book h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(BOOK, people) + '">导出读过的书</a>');
+    $('#book h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(BOOK, people, true) + '">导出想读</a>');
     $('#movie h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(MOVIE, people) + '">导出看过的片</a>');
+    $('#movie h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(MOVIE, people, true) + '">导出想看</a>');
     $('#music h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(MUSIC, people) + '">导出听过的碟</a>');
+    $('#music h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getExportLink(MUSIC, people, true) + '">导出想听</a>');
     $('#game h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getGameExportLink(people) + '">导出玩过的游戏</a>');
+    $('#game h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getGameExportLink(people, true) + '">导出想玩</a>');
     $('#drama h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getDramaExportLink(people) + '">导出看过的舞台剧</a>');
+    $('#drama h2 .pl a:last').after('&nbsp;·&nbsp;<a href="' + getDramaExportLink(people, true) + '">导出想看</a>');
   }
 
   if (location.href.indexOf('//www.douban.com/location/people/') > -1) { // for drama link
@@ -50,23 +59,23 @@
   }
 
   if (location.href.indexOf('//book.douban.com/') > -1 && location.href.indexOf('export=1') > -1) {
-    init(BOOK);
+    init(BOOK, location.href.indexOf('wish') > -1);
   }
 
   if (location.href.indexOf('//movie.douban.com/') > -1 && location.href.indexOf('export=1') > -1) {
-    init(MOVIE);
+    init(MOVIE, location.href.indexOf('wish') > -1);
   }
 
   if (location.href.indexOf('//music.douban.com/') > -1 && location.href.indexOf('export=1') > -1) {
-    init(MUSIC);
+    init(MUSIC, location.href.indexOf('wish') > -1);
   }
 
   if (people && location.href.indexOf('//www.douban.com/people/' + people + '/games') > -1 && location.href.indexOf('export=1') > -1) {
-    init(GAME);
+    init(GAME, location.href.indexOf('wish') > -1);
   }
 
   if (people && location.href.indexOf('//www.douban.com/location/people/' + people + '/drama') > -1 && location.href.indexOf('export=1') > -1) {
-    init(DRAMA);
+    init(DRAMA, location.href.indexOf('wish') > -1);
   }
 
   function escapeQuote(str) {
@@ -74,7 +83,7 @@
   }
 
   // 获取当前页数据
-  function getCurPageItems(type) {
+  function getCurPageItems(type, isWish = false) {
     var items = [];
 
     var elems = $('li.item');
@@ -85,28 +94,30 @@
       elems = $('.grid-view .item');
     }
 
-    elems.each(function(index) {
+    elems.each(function (index) {
       var item = {
         title: escapeQuote($(this).find('.title a').text().trim()),
         link: $(this).find('.title a').attr('href').trim(),
-        'rating_date': $(this).find('.date').text().trim().replaceAll('-', '/'), // 2020-07-17 => 2020/07/17
       };
-      if (type === GAME) {
-        let rating = $(this).find('.rating-info .rating-star').attr('class');
-        rating = rating
-          ? (rating.slice(19, 20) === 'N' ? '' : Number(rating.slice(19, 20)))
-          : '';
-        item.rating = rating;
+      if (!isWish) {
+        item['rating_date'] = $(this).find('.date').text().trim().replaceAll('-', '/'); // 2020-07-17 => 2020/07/17
+        if (type === GAME) {
+          let rating = $(this).find('.rating-info .rating-star').attr('class');
+          rating = rating
+            ? (rating.slice(19, 20) === 'N' ? '' : Number(rating.slice(19, 20)))
+            : '';
+          item.rating = rating;
 
-      } else if (type === DRAMA) {
-        let rating = $(this).find('.date')[0].previousElementSibling;
-        if (rating) {
-          rating = $(rating).attr('class').slice(6, 7);
+        } else if (type === DRAMA) {
+          let rating = $(this).find('.date')[0].previousElementSibling;
+          if (rating) {
+            rating = $(rating).attr('class').slice(6, 7);
+          }
+          item.rating = rating ? Number(rating) : '';
+
+        } else {
+          item.rating = ($(this).find('.date span').attr('class')) ? $(this).find('.date span').attr('class').slice(6, 7) : '';
         }
-        item.rating = rating ? Number(rating) : '';
-
-      } else {
-        item.rating = ($(this).find('.date span').attr('class')) ? $(this).find('.date span').attr('class').slice(6, 7) : '';
       }
 
       var co = $(this).find('.comment');
@@ -182,31 +193,41 @@
     return items;
   }
 
-  function init(type) {
+  function init(type, isWish = false) {
     const db = new Dexie('db_export'); // init indexedDB
     if (type === MOVIE) {
       db.version(1).stores({
-        items: '++id, title, rating, rating_date, comment, release_date, country, link',
+        items: isWish
+          ? '++id, title, release_date, country, link'
+          : '++id, title, rating, rating_date, comment, release_date, country, link',
       });
     } else if (type === BOOK) {
       db.version(1).stores({
-        items: '++id, title, rating, rating_date, comment, release_date, author, link',
+        items: isWish
+          ? '++id, title, release_date, author, link'
+          : '++id, title, rating, rating_date, comment, release_date, author, link',
       });
     } else if (type === MUSIC) {
       db.version(1).stores({
-        items: '++id, title, rating, rating_date, comment, release_date, musician, link',
+        items: isWish
+          ? '++id, title, release_date, musician, link'
+          : '++id, title, rating, rating_date, comment, release_date, musician, link',
       });
     } else if (type === GAME) {
       db.version(1).stores({
-        items: '++id, title, rating, rating_date, comment, release_date, link',
+        items: isWish
+          ? '++id, title, release_date, link'
+          : '++id, title, rating, rating_date, comment, release_date, link',
       });
     } else if (type === DRAMA) {
       db.version(1).stores({
-        items: '++id, title, rating, rating_date, comment, mixed_info, link',
+        items: isWish
+          ? '++id, title, mixed_info, link'
+          : '++id, title, rating, rating_date, comment, mixed_info, link',
       });
     }
 
-    const items = getCurPageItems(type);
+    const items = getCurPageItems(type, isWish);
     db.items.bulkAdd(items).then(function() {
       console.log('添加成功+', items.length);
 
@@ -215,45 +236,56 @@
         nextPageLink = nextPageLink + '&export=1';
         window.location.href = nextPageLink;
       } else {
-        exportAll(type);
+        exportAll(type, isWish);
       }
     }).catch(function (error) {
       console.error("Ooops: " + error);
     });
   }
 
-  function exportAll(type) {
+  function exportAll(type, isWish = false) {
     const db = new Dexie('db_export');
     if (type === MOVIE) {
       db.version(1).stores({
-        items: '++id, title, rating, rating_date, comment, release_date, country, link',
+        items: isWish
+          ? '++id, title, release_date, country, link'
+          : '++id, title, rating, rating_date, comment, release_date, country, link',
       });
     } else if (type === BOOK) {
       db.version(1).stores({
-        items: '++id, title, rating, rating_date, comment, release_date, author, link',
+        items: isWish
+          ? '++id, title, release_date, author, link'
+          : '++id, title, rating, rating_date, comment, release_date, author, link',
       });
     } else if (type === MUSIC) {
       db.version(1).stores({
-        items: `++id, title, rating, rating_date, comment, release_date, musician, link`,
+        items: isWish
+          ? '++id, title, release_date, musician, link'
+          : '++id, title, rating, rating_date, comment, release_date, musician, link',
       });
     } else if (type === GAME) {
       db.version(1).stores({
-        items: '++id, title, rating, rating_date, comment, release_date, link',
+        items: isWish
+          ? '++id, title, release_date, link'
+          : '++id, title, rating, rating_date, comment, release_date, link',
       });
     } else if (type === DRAMA) {
       db.version(1).stores({
-        items: '++id, title, rating, rating_date, comment, mixed_info, link',
+        items: isWish
+          ? '++id, title, mixed_info, link'
+          : '++id, title, rating, rating_date, comment, mixed_info, link',
       });
     }
 
-    db.items.orderBy('rating_date').reverse().toArray().then(function(all) {
+    let results = isWish ? db.items : db.items.orderBy('rating_date').reverse();
+    results.toArray().then(function (all) {
       all = all.map(function(item) {
         delete item.id;
         return item;
       });
 
-      let title = ['标题', '个人评分', '打分日期', '我的短评'];
-      let key = ['title', 'rating', 'rating_date', 'comment', 'release_date'];
+      let title = isWish ? ['标题'] : ['标题', '个人评分', '打分日期', '我的短评'];
+      let key = isWish ? ['title', 'release_date'] : ['title', 'rating', 'rating_date', 'comment', 'release_date'];
       if (type === MOVIE) {
         title = title.concat(['上映日期', '制片国家', '条目链接']);
         key = key.concat(['country', 'link']);
@@ -274,7 +306,7 @@
 
       JSonToCSV.setDataConver({
         data: all,
-        fileName: 'db-' + type + '-' + new Date().toISOString().split('T')[0].replaceAll('-', ''),
+        fileName: 'db-' + type + '-' + (isWish ? 'wishlist-' : '') + new Date().toISOString().split('T')[0].replaceAll('-', ''),
         columns: {title, key},
       });
       db.delete();
