@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name             豆瓣读书+电影+音乐+游戏+舞台剧导出工具
 // @namespace        https://www.douban.com/people/MoNoMilky/
-// @version          0.4.0
+// @version          0.4.1
 // @description      将读过/看过/听过/玩过的读书/电影/音乐/游戏/舞台剧条目分别导出为 csv 文件
 // @author           Bambooom
 // @match            https://book.douban.com/people/*/collect*
@@ -195,32 +195,33 @@
 
   function init(type, isWish = false) {
     const db = new Dexie('db_export'); // init indexedDB
+    const ver = isWish ? 2 : 1;
     if (type === MOVIE) {
-      db.version(1).stores({
+      db.version(ver).stores({
         items: isWish
           ? '++id, title, release_date, country, link'
           : '++id, title, rating, rating_date, comment, release_date, country, link',
       });
     } else if (type === BOOK) {
-      db.version(1).stores({
+      db.version(ver).stores({
         items: isWish
           ? '++id, title, release_date, author, link'
           : '++id, title, rating, rating_date, comment, release_date, author, link',
       });
     } else if (type === MUSIC) {
-      db.version(1).stores({
+      db.version(ver).stores({
         items: isWish
           ? '++id, title, release_date, musician, link'
           : '++id, title, rating, rating_date, comment, release_date, musician, link',
       });
     } else if (type === GAME) {
-      db.version(1).stores({
+      db.version(ver).stores({
         items: isWish
           ? '++id, title, release_date, link'
           : '++id, title, rating, rating_date, comment, release_date, link',
       });
     } else if (type === DRAMA) {
-      db.version(1).stores({
+      db.version(ver).stores({
         items: isWish
           ? '++id, title, mixed_info, link'
           : '++id, title, rating, rating_date, comment, mixed_info, link',
@@ -245,32 +246,33 @@
 
   function exportAll(type, isWish = false) {
     const db = new Dexie('db_export');
+    const ver = isWish ? 2 : 1;
     if (type === MOVIE) {
-      db.version(1).stores({
+      db.version(ver).stores({
         items: isWish
           ? '++id, title, release_date, country, link'
           : '++id, title, rating, rating_date, comment, release_date, country, link',
       });
     } else if (type === BOOK) {
-      db.version(1).stores({
+      db.version(ver).stores({
         items: isWish
           ? '++id, title, release_date, author, link'
           : '++id, title, rating, rating_date, comment, release_date, author, link',
       });
     } else if (type === MUSIC) {
-      db.version(1).stores({
+      db.version(ver).stores({
         items: isWish
           ? '++id, title, release_date, musician, link'
           : '++id, title, rating, rating_date, comment, release_date, musician, link',
       });
     } else if (type === GAME) {
-      db.version(1).stores({
+      db.version(ver).stores({
         items: isWish
           ? '++id, title, release_date, link'
           : '++id, title, rating, rating_date, comment, release_date, link',
       });
     } else if (type === DRAMA) {
-      db.version(1).stores({
+      db.version(ver).stores({
         items: isWish
           ? '++id, title, mixed_info, link'
           : '++id, title, rating, rating_date, comment, mixed_info, link',
