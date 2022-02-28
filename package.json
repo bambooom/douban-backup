@@ -17,7 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "@notionhq/client": "^0.4.13",
-    "dayjs": "^1.10.7",
+    "dayjs": "^1.10.8",
     "dotenv": "^16.0.0",
     "fast-csv": "^4.3.6",
     "got": "11.8.3",
