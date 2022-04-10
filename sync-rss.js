@@ -108,7 +108,7 @@ async function handleFeed(feed, category) {
     return;
   }
   const dbID = getDBID(category);
-  if (!dbID && (category === CATEGORY.drama || category === CATEGORY.game)) {
+  if (!dbID) {
     console.log(`No notion database id for ${category}`);
     return;
   }
