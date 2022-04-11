@@ -25,6 +25,6 @@
     "rss-parser": "^3.12.0"
   },
   "devDependencies": {
-    "image-downloader": "^4.1.0"
+    "image-downloader": "^4.2.0"
   }
 }
