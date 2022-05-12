@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name             豆瓣读书+电影+音乐+游戏+舞台剧导出工具
 // @namespace        https://www.douban.com/people/MoNoMilky/
-// @version          0.4.1
+// @version          0.4.2
 // @description      将读过/看过/听过/玩过的读书/电影/音乐/游戏/舞台剧条目分别导出为 csv 文件
 // @author           Bambooom
 // @match            https://book.douban.com/people/*/collect*
@@ -370,7 +370,7 @@
             row += '"' + (typeof columns.formatter === 'function' ? columns.formatter(key, n[key]) || n[key] || '' : n[key] || '') + '",';
           }
         }
-        row.slice(0, row.length - 1); // 删除最后一个,
+        row = row.slice(0, row.length - 1); // 删除最后一个,
         CSV += row + '\r\n'; // 添加换行符号
       });
       if (!CSV) return;
