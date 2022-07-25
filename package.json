@@ -16,7 +16,7 @@
   "author": "zhuzi <nmz89825@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@notionhq/client": "^1.0.4",
+    "@notionhq/client": "^2.1.0",
     "dayjs": "^1.11.3",
     "dotenv": "^16.0.1",
     "fast-csv": "^4.3.6",
