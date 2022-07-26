@@ -137,7 +137,15 @@ async function handleFeed(feed, category) {
 
   if (filtered.results.length) {
     feed = feed.filter(item => {
-      let findItem = filtered.results.filter(i => i.properties[DB_PROPERTIES.ITEM_LINK].url === item.link);
+      let findItem = filtered.results.filter(async i => {
+        // need to fetch property item as the database filter results do not include
+        // property contents any more, see https://developers.notion.com/reference/retrieve-a-page-property
+        let propItem = await notion.pages.properties.retrieve({
+          page_id: i.id,
+          property_id: i.properties[DB_PROPERTIES.ITEM_LINK].id,
+        });
+        return propItem.url === item.link;
+      });
       return !findItem.length; // if length != 0 means can find item in the filtered results, means this item already in db
     });
   }
