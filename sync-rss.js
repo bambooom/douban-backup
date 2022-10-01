@@ -283,6 +283,7 @@ async function fetchItem(link, category) {
       } else if (text.startsWith('原作名')) {
         itemData[DB_PROPERTIES.TITLE] += nextText;
       } else if (text.startsWith('出版年')) {
+        nextText = nextText.replace(/年|月|日/g, '-').slice(0, -1); // '2000年5月' special case
         itemData[DB_PROPERTIES.PUBLICATION_DATE] = dayjs(nextText).format('YYYY-MM-DD'); // this can have only year, month, but need to format to YYYY-MM-DD
       } else if (text.startsWith('ISBN')) {
         itemData[DB_PROPERTIES.ISBN] = Number(nextText);
