@@ -21,7 +21,7 @@
     "dotenv": "^16.0.3",
     "fast-csv": "^4.3.6",
     "got": "^11.8.5",
-    "jsdom": "^20.0.3",
+    "jsdom": "^21.1.0",
     "rss-parser": "^3.12.0"
   },
   "devDependencies": {
