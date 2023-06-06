@@ -255,9 +255,10 @@ async function fetchItem(link, category) {
     itemData[DB_PROPERTIES.YEAR] = dom.window.document
       .querySelector('#content h1 .year')
       .textContent.slice(1, -1);
-    itemData[DB_PROPERTIES.POSTER] = dom.window.document
-      .querySelector('#mainpic img')
-      ?.src.replace(/\.webp$/, '.jpg');
+    const img = dom.window.document.querySelector('#mainpic img');
+    if (img?.title !== '点击上传封面图片' && img?.src.length <= 100) {
+      itemData[DB_PROPERTIES.POSTER] = img?.src.replace(/\.webp$/, '.jpg');
+    }
     itemData[DB_PROPERTIES.DIRECTORS] =
       dom.window.document.querySelector('#info .attrs').textContent;
     itemData[DB_PROPERTIES.ACTORS] = [
@@ -283,9 +284,10 @@ async function fetchItem(link, category) {
     itemData[DB_PROPERTIES.TITLE] = dom.window.document
       .querySelector('#wrapper h1 span')
       .textContent.trim();
-    itemData[DB_PROPERTIES.POSTER] = dom.window.document
-      .querySelector('#mainpic img')
-      ?.src.replace(/\.webp$/, '.jpg');
+    const img = dom.window.document.querySelector('#mainpic img');
+    if (img?.title !== '点击上传封面图片' && img?.src.length <= 100) {
+      itemData[DB_PROPERTIES.POSTER] = img?.src.replace(/\.webp$/, '.jpg');
+    }
     let info = [...dom.window.document.querySelectorAll('#info span.pl')];
     let release = info.filter((i) =>
       i.textContent.trim().startsWith('发行时间')
@@ -312,9 +314,10 @@ async function fetchItem(link, category) {
     itemData[DB_PROPERTIES.TITLE] = dom.window.document
       .querySelector('#wrapper h1 [property="v:itemreviewed"]')
       .textContent.trim();
-    itemData[DB_PROPERTIES.POSTER] = dom.window.document
-      .querySelector('#mainpic img')
-      ?.src.replace(/\.webp$/, '.jpg');
+    const img = dom.window.document.querySelector('#mainpic img');
+    if (img?.title !== '点击上传封面图片' && img?.src.length <= 100) {
+      itemData[DB_PROPERTIES.POSTER] = img?.src.replace(/\.webp$/, '.jpg');
+    }
     let info = [...dom.window.document.querySelectorAll('#info span.pl')];
     info.forEach((i) => {
       let text = i.textContent.trim();
@@ -353,9 +356,10 @@ async function fetchItem(link, category) {
     itemData[DB_PROPERTIES.TITLE] = dom.window.document
       .querySelector('#wrapper #content h1')
       .textContent.trim();
-    itemData[DB_PROPERTIES.POSTER] = dom.window.document
-      .querySelector('.item-subject-info .pic img')
-      ?.src.replace(/\.webp$/, '.jpg');
+    const img = dom.window.document.querySelector('.item-subject-info .pic img');
+    if (img?.title !== '点击上传封面图片' && img?.src.length <= 100) {
+      itemData[DB_PROPERTIES.POSTER] = img?.src.replace(/\.webp$/, '.jpg');
+    }
     const gameInfo = dom.window.document.querySelector('#content .game-attr');
     const dts = [...gameInfo.querySelectorAll('dt')].filter(
       (i) =>
@@ -384,9 +388,10 @@ async function fetchItem(link, category) {
       .querySelector('#content .drama-info .meta [itemprop="genre"]')
       .textContent.trim();
     itemData[DB_PROPERTIES.GENRE] = [genre];
-    itemData[DB_PROPERTIES.POSTER] = dom.window.document
-      .querySelector('.drama-info .pic img')
-      ?.src.replace(/\.webp$/, '.jpg');
+    const img = dom.window.document.querySelector('.drama-info .pic img');
+    if (img?.title !== '点击上传封面图片' && img?.src.length <= 100) {
+      itemData[DB_PROPERTIES.POSTER] = img?.src.replace(/\.webp$/, '.jpg');
+    }
   }
 
   return itemData;
