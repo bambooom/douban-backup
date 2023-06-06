@@ -6,17 +6,16 @@
  *   -- can skip already inserted items
 */
 
-const fs = require('fs');
-const {config} = require('dotenv');
-const csv = require('fast-csv');
-const {Client, LogLevel} = require("@notionhq/client");
-const dayjs = require('dayjs');
-const got = require('got');
-const jsdom = require("jsdom");
-const {JSDOM} = jsdom;
-const {DB_PROPERTIES, sleep} = require('./util');
+import fs from 'node:fs';
+import dotenv from 'dotenv';
+import csv from 'fast-csv';
+import { Client, LogLevel } from '@notionhq/client';
+import dayjs from 'dayjs';
+import got from 'got';
+import { JSDOM } from 'jsdom';
+import { DB_PROPERTIES, sleep } from './util.js';
 
-config();
+dotenv.config();
 
 // Initializing a client
 const notion = new Client({

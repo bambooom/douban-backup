@@ -1,4 +1,4 @@
-const DB_PROPERTIES = {
+export const DB_PROPERTIES = {
   // movie
   POSTER: '海报', // common
   TITLE: '标题', // common
@@ -21,7 +21,7 @@ const DB_PROPERTIES = {
   ISBN: 'ISBN',
 };
 
-const PropertyType = {
+export const PropertyType = {
   POSTER: 'file',
   TITLE: 'title',
   RATING: 'multi_select',
@@ -41,12 +41,6 @@ const PropertyType = {
   ISBN: 'number',
 };
 
-function sleep(ms) {
+export function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
-
-module.exports = {
-  DB_PROPERTIES,
-  PropertyType,
-  sleep,
-};
