@@ -1,6 +1,7 @@
 ![sync-rss](https://github.com/bambooom/douban-backup/actions/workflows/sync-rss.js.yml/badge.svg)
 
 > 详细教程 -> https://zhuzi.dev/2021/06/05/douban-backup-sync-notion/
+>
 > 油猴脚本 -> https://greasyfork.org/en/scripts/420999
 
 ## update notion database from csv
@@ -149,6 +150,6 @@ RSS 的好处一个是轻量，但又包含了个人标记的最重要的几个�
 - [x] ~~userscript 添加导出 在* 和 想* 的功能~~
   - 想* 的部分已更新
   - 在* 的部分感觉个人需求实在不太大，已搁置
-- 添加 *在\** 或者 *想\** 列表，考虑一下如何显示？
-- 从别处更新条目，比如 neodb，因为部分条目在豆瓣被删除或未创建
+- [ ] 添加 *在\** 或者 *想\** 列表，考虑一下如何显示？
+- [ ] 从别处更新条目，比如 neodb，因为部分条目在豆瓣被删除或未创建
   - neodb API: https://neodb.social/developer/
