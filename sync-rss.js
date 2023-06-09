@@ -90,10 +90,12 @@ async function main() {
   }
 
   const categoryKeys = Object.keys(feedData);
+  const AllFailedItems = [];
   if (categoryKeys.length) {
     for (const cateKey of categoryKeys) {
       try {
-        await handleFeed(feedData[cateKey], cateKey);
+        const failedItems = await handleFeed(feedData[cateKey], cateKey);
+        AllFailedItems.push(...failedItems);
       } catch (error) {
         console.error(`Failed to handle ${cateKey} feed. `, error);
         process.exit(1);
@@ -101,7 +103,16 @@ async function main() {
     }
   }
 
-  console.log('All feeds are handled.');
+  if (AllFailedItems.length) {
+    console.log('Failed to handle the following feeds:');
+    for (let i = 0; i < AllFailedItems.length; i++) {
+      const item = AllFailedItems[i];
+      console.log(`${item.title}: ${item.link}`);
+    }
+    process.exit(1);
+  } else {
+    console.log('All feeds are handled.');
+  }
 };
 
 main();
@@ -155,6 +166,8 @@ async function handleFeed(feed, category) {
     `There are total ${feed.length} new ${category} item(s) need to insert.`
   );
 
+  let failedItems = [];
+
   for (let i = 0; i < feed.length; i++) {
     const item = feed[i];
     const link = item.link;
@@ -172,12 +185,20 @@ async function handleFeed(feed, category) {
     }
 
     if (itemData) {
-      await addToNotion(itemData, category);
+      const successful = await addToNotion(itemData, category);
+      if (!successful) {
+        failedItems.push(item);
+      }
       await sleep(1000);
     }
   }
+
+  if (failedItems.length) {
+    console.log(`Failed to insert ${failedItems.length} items.`);
+  }
   console.log(`${category} feeds done.`);
   console.log('====================');
+  return failedItems;
 }
 
 function getCategoryAndId(title, link) {
@@ -485,6 +506,7 @@ async function addToNotion(itemData, category) {
     itemData[DB_PROPERTIES.RATING_DATE],
     itemData[DB_PROPERTIES.TITLE]
   );
+  let result = true;
   try {
     // @TODO: refactor this to add property value generator by value type
     let properties = {};
@@ -549,5 +571,8 @@ async function addToNotion(itemData, category) {
         ' with error: ',
       error
     );
+    result = false;
   }
+
+  return result;
 }
