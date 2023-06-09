@@ -1,11 +1,14 @@
 ![sync-rss](https://github.com/bambooom/douban-backup/actions/workflows/sync-rss.js.yml/badge.svg)
 
+> 详细教程 -> https://zhuzi.dev/2021/06/05/douban-backup-sync-notion/
+> 油猴脚本 -> https://greasyfork.org/en/scripts/420999
+
 ## update notion database from csv
 
 在前一次导出后过了一段时间，在豆瓣上又有新的标记，但没有简单方法可以同步，又不想手动添加。
 终于等到了 notion public API 发布出来。
 
-如果在豆瓣上又重新执行油猴脚本（`export.user.js`）导出了一个更新的 csv 文件。
+如果在豆瓣上又重新执行[油猴脚本（`export.user.js`）](https://greasyfork.org/en/scripts/420999)导出了一个更新的 csv 文件。
 其中大多数都已经在上一次导出到 notion database 中。少数（大约 80 个）新条目需要更新到 database 中。
 
 可以使用 `update-notion.js` 脚本，用最新的 csv 文件作为输入，跳过所有已经导入过的条目。
@@ -141,6 +144,11 @@ RSS 的好处一个是轻量，但又包含了个人标记的最重要的几个�
 
 
 ## todo
-- 补全 notion 中的海报
+- [x] ~~补全 notion 中的海报~~
+  - 同步时会正常插入海报信息，海报图片是豆瓣上的图片的 URL，所以在 notion 中显示不稳定。但因为 notion API 不支持上传文件，所以也无法直接插入图片。暂时不做任何优化。
+- [x] ~~userscript 添加导出 在* 和 想* 的功能~~
+  - 想* 的部分已更新
+  - 在* 的部分感觉个人需求实在不太大，已搁置
 - 添加 *在\** 或者 *想\** 列表，考虑一下如何显示？
-- userscript 添加导出 在* 和 想* 的功能
+- 从别处更新条目，比如 neodb，因为部分条目在豆瓣被删除或未创建
+  - neodb API: https://neodb.social/developer/
