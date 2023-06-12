@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name             豆瓣读书+电影+音乐+游戏+舞台剧导出工具
 // @namespace        https://www.douban.com/people/MoNoMilky/
-// @version          0.4.2
+// @version          0.4.3
 // @description      将读过/看过/听过/玩过的读书/电影/音乐/游戏/舞台剧条目分别导出为 csv 文件
 // @author           Bambooom
 // @match            https://book.douban.com/people/*/collect*
@@ -286,21 +286,26 @@
         return item;
       });
 
-      let title = isWish ? ['标题'] : ['标题', '个人评分', '打分日期', '我的短评'];
+      let title = isWish ? ['标题'] : ['个人评分', '打分日期', '我的短评'];
       let key = isWish ? ['title', 'release_date'] : ['title', 'rating', 'rating_date', 'comment', 'release_date'];
       if (type === MOVIE) {
+        title.unshift('电影/电视剧/番组');
         title = title.concat(['上映日期', '制片国家', '条目链接']);
         key = key.concat(['country', 'link']);
       } else if (type === BOOK) {
+        title.unshift('书名');
         title = title.concat(['出版日期', '作者', '条目链接']);
         key = key.concat(['author', 'link']);
       } else if (type === MUSIC) {
+        title.unshift('单曲/专辑');
         title = title.concat(['发行日期', '音乐家', '条目链接']);
         key = key.concat(['musician', 'link']);
       } else if (type === GAME) {
+        title.unshift('游戏名称');
         title = title.concat(['发行日期', '条目链接']);
         key.push('link');
       } else if (type === DRAMA) {
+        title.unshift('舞台剧名称');
         title = title.concat(['混合信息', '条目链接']);
         key.pop();
         key = key.concat(['mixed_info', 'link']);
