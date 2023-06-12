@@ -270,9 +270,11 @@ async function fetchItem(link, category) {
 
   // movie item page
   if (category === CATEGORY.movie) {
-    itemData[DB_PROPERTIES.TITLE] = dom.window.document
+    const title = dom.window.document
       .querySelector('#content h1 [property="v:itemreviewed"]')
       .textContent.trim();
+    itemData[DB_PROPERTIES.NAME] = title;
+    itemData[DB_PROPERTIES.MOVIE_TITLE] = title;
     itemData[DB_PROPERTIES.YEAR] = dom.window.document
       .querySelector('#content h1 .year')
       .textContent.slice(1, -1);
@@ -302,12 +304,14 @@ async function fetchItem(link, category) {
 
     // music item page
   } else if (category === CATEGORY.music) {
-    itemData[DB_PROPERTIES.TITLE] = dom.window.document
+    const title = dom.window.document
       .querySelector('#wrapper h1 span')
       .textContent.trim();
+    itemData[DB_PROPERTIES.MUSIC_TITLE] = title;
+    itemData[DB_PROPERTIES.NAME] = title;
     const img = dom.window.document.querySelector('#mainpic img');
     if (img?.title !== '点击上传封面图片' && img?.src.length <= 100) {
-      itemData[DB_PROPERTIES.POSTER] = img?.src.replace(/\.webp$/, '.jpg');
+      itemData[DB_PROPERTIES.COVER] = img?.src.replace(/\.webp$/, '.jpg');
     }
     let info = [...dom.window.document.querySelectorAll('#info span.pl')];
     let release = info.filter((i) =>
@@ -332,12 +336,14 @@ async function fetchItem(link, category) {
 
     // book item page
   } else if (category === CATEGORY.book) {
-    itemData[DB_PROPERTIES.TITLE] = dom.window.document
+    const title = dom.window.document
       .querySelector('#wrapper h1 [property="v:itemreviewed"]')
       .textContent.trim();
+    itemData[DB_PROPERTIES.BOOK_TITLE] = title;
+    itemData[DB_PROPERTIES.NAME] = title;
     const img = dom.window.document.querySelector('#mainpic img');
     if (img?.title !== '点击上传封面图片' && img?.src.length <= 100) {
-      itemData[DB_PROPERTIES.POSTER] = img?.src.replace(/\.webp$/, '.jpg');
+      itemData[DB_PROPERTIES.COVER] = img?.src.replace(/\.webp$/, '.jpg');
     }
     let info = [...dom.window.document.querySelectorAll('#info span.pl')];
     info.forEach((i) => {
@@ -360,7 +366,7 @@ async function fetchItem(link, category) {
       } else if (text.startsWith('出版社')) {
         itemData[DB_PROPERTIES.PUBLISHING_HOUSE] = nextText;
       } else if (text.startsWith('原作名')) {
-        itemData[DB_PROPERTIES.TITLE] += nextText;
+        itemData[DB_PROPERTIES.BOOK_TITLE] += nextText;
       } else if (text.startsWith('出版年')) {
         if (/年|月|日/.test(nextText)) {
           nextText = nextText.replace(/年|月|日/g, '-').slice(0, -1); // '2000年5月' special case
@@ -374,12 +380,14 @@ async function fetchItem(link, category) {
 
     // game item page
   } else if (category === CATEGORY.game) {
-    itemData[DB_PROPERTIES.TITLE] = dom.window.document
+    const title = dom.window.document
       .querySelector('#wrapper #content h1')
       .textContent.trim();
+    itemData[DB_PROPERTIES.GAME_TITLE] = title;
+    itemData[DB_PROPERTIES.NAME] = title;
     const img = dom.window.document.querySelector('.item-subject-info .pic img');
     if (img?.title !== '点击上传封面图片' && img?.src.length <= 100) {
-      itemData[DB_PROPERTIES.POSTER] = img?.src.replace(/\.webp$/, '.jpg');
+      itemData[DB_PROPERTIES.COVER] = img?.src.replace(/\.webp$/, '.jpg');
     }
     const gameInfo = dom.window.document.querySelector('#content .game-attr');
     const dts = [...gameInfo.querySelectorAll('dt')].filter(
@@ -402,9 +410,11 @@ async function fetchItem(link, category) {
 
     // drama item page
   } else if (category === CATEGORY.drama) {
-    itemData[DB_PROPERTIES.TITLE] = dom.window.document
+    const title = dom.window.document
       .querySelector('#content .drama-info .meta h1')
       .textContent.trim();
+    itemData[DB_PROPERTIES.DRAMA_TITLE] = title;
+    itemData[DB_PROPERTIES.NAME] = title;
     let genre = dom.window.document
       .querySelector('#content .drama-info .meta [itemprop="genre"]')
       .textContent.trim();
@@ -504,7 +514,7 @@ async function addToNotion(itemData, category) {
   console.log(
     'Going to insert ',
     itemData[DB_PROPERTIES.RATING_DATE],
-    itemData[DB_PROPERTIES.TITLE]
+    itemData[DB_PROPERTIES.NAME]
   );
   let result = true;
   try {
@@ -558,7 +568,7 @@ async function addToNotion(itemData, category) {
     const response = await notion.pages.create(postData);
     if (response && response.id) {
       console.log(
-        itemData[DB_PROPERTIES.TITLE] +
+        itemData[DB_PROPERTIES.NAME] +
           `[${itemData[DB_PROPERTIES.ITEM_LINK]}]` +
           ' page created.'
       );
@@ -566,7 +576,7 @@ async function addToNotion(itemData, category) {
   } catch (error) {
     console.warn(
       'Failed to create ' +
-        itemData[DB_PROPERTIES.TITLE] +
+        itemData[DB_PROPERTIES.NAME] +
         `(${itemData[DB_PROPERTIES.ITEM_LINK]})` +
         ' with error: ',
       error
