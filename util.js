@@ -31,8 +31,13 @@ export const DB_PROPERTIES = {
 };
 
 export const PropertyType = {
-  POSTER: 'file',
-  TITLE: 'title',
+  POSTER: 'files',
+  MOVIE_TITLE: 'title',
+  MUSIC_TITLE: 'title',
+  BOOK_TITLE: 'title',
+  GAME_TITLE: 'title',
+  DRAMA_TITLE: 'title',
+  COVER: 'files',
   RATING: 'multi_select',
   RATING_DATE: 'date',
   COMMENTS: 'rich_text',

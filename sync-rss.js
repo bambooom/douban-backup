@@ -279,8 +279,10 @@ async function fetchItem(link, category) {
       .querySelector('#content h1 .year')
       .textContent.slice(1, -1);
     const img = dom.window.document.querySelector('#mainpic img');
-    if (img?.title !== '点击上传封面图片' && img?.src.length <= 100) {
-      itemData[DB_PROPERTIES.POSTER] = img?.src.replace(/\.webp$/, '.jpg');
+    if (img?.title === '点击看更多海报') {
+      itemData[DB_PROPERTIES.POSTER] = img?.src
+        .trim()
+        .replace(/\.webp$/, '.jpg');
     }
     itemData[DB_PROPERTIES.DIRECTORS] =
       dom.window.document.querySelector('#info .attrs').textContent;
@@ -433,6 +435,7 @@ function getPropertyValye(value, type, key) {
   switch (type) {
     case 'title':
       res = {
+        type: 'title',
         title: [
           {
             text: {
@@ -442,12 +445,14 @@ function getPropertyValye(value, type, key) {
         ],
       };
       break;
-    case 'file':
+    case 'files':
       res = {
+        type: 'files',
         files: [
           {
-            // file: {}
+            // file: {},
             name: value,
+            type: 'external',
             external: {
               // need external:{} format to insert the files property, but still not successful
               url: value,
@@ -458,6 +463,7 @@ function getPropertyValye(value, type, key) {
       break;
     case 'date':
       res = {
+        type: 'date',
         date: {
           start: value,
         },
@@ -467,6 +473,7 @@ function getPropertyValye(value, type, key) {
       res =
         key === DB_PROPERTIES.RATING
           ? {
+              type: 'multi_select',
               multi_select: value
                 ? [
                     {
@@ -476,6 +483,7 @@ function getPropertyValye(value, type, key) {
                 : [],
             }
           : {
+              type: 'multi_select',
               multi_select: (value || []).map((g) => ({
                 name: g, // @Q: if the option is not created before, can not use it directly here?
               })),
@@ -483,6 +491,7 @@ function getPropertyValye(value, type, key) {
       break;
     case 'rich_text':
       res = {
+        type: 'rich_text',
         rich_text: [
           {
             type: 'text',
@@ -495,11 +504,13 @@ function getPropertyValye(value, type, key) {
       break;
     case 'number':
       res = {
+        type: 'number',
         number: value ? Number(value) : null,
       };
       break;
     case 'url':
       res = {
+        type: 'url',
         url: value || url,
       };
       break;
@@ -518,9 +529,9 @@ async function addToNotion(itemData, category) {
   );
   let result = true;
   try {
-    // @TODO: refactor this to add property value generator by value type
     let properties = {};
     const keys = Object.keys(DB_PROPERTIES);
+    keys.shift(); // remove fist one NAME
     keys.forEach((key) => {
       if (itemData[DB_PROPERTIES[key]]) {
         properties[DB_PROPERTIES[key]] = getPropertyValye(
@@ -556,12 +567,12 @@ async function addToNotion(itemData, category) {
       // fill in properties by the format: https://developers.notion.com/reference/page#page-property-value
       properties,
     };
-    if (properties[DB_PROPERTIES.POSTER]) {
+    if (properties[DB_PROPERTIES.POSTER] || properties[DB_PROPERTIES.COVER]) {
       // use poster for the page cover
       postData.cover = {
         type: 'external',
         external: {
-          url: properties[DB_PROPERTIES.POSTER]?.files[0]?.external?.url, // cannot be empty string or null
+          url: (properties[DB_PROPERTIES.POSTER] || properties[DB_PROPERTIES.COVER])?.files[0]?.external?.url, // cannot be empty string or null
         },
       };
     }
