@@ -6,7 +6,6 @@ import { JSDOM } from 'jsdom';
 import Parser from 'rss-parser';
 import { DB_PROPERTIES, PropertyType, sleep } from './util.js';
 
-
 dotenv.config();
 const parser = new Parser();
 
@@ -18,6 +17,10 @@ const RATING_TEXT = {
   力荐: 5,
 };
 const done = /^(看过|听过|读过|玩过)/;
+const doing = /^(在看|在听|在读|在玩)/;
+const wishlist = /^(想看|想听|想读|想玩)/;
+const allStatus =
+  /^(看过|听过|读过|玩过|在看|在听|在读|在玩|想看|想听|想读|想玩)/;
 const CATEGORY = {
   movie: 'movie',
   music: 'music',
@@ -42,12 +45,13 @@ const musicDBID = process.env.NOTION_MUSIC_DATABASE_ID;
 const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
 const gameDBID = process.env.NOTION_GAME_DATABASE_ID;
 const dramaDBID = process.env.NOTION_DRAMA_DATABASE_ID;
+const neodbToken = process.env.NEODB_API_TOKEN;
 
 async function main() {
   console.log('Refreshing feeds from RSS...');
-  let feed;
+  let feeds;
   try {
-    feed = await parser.parseURL(
+    feeds = await parser.parseURL(
       `https://www.douban.com/feed/people/${DOUBAN_USER_ID}/interests`
     );
   } catch (error) {
@@ -55,11 +59,15 @@ async function main() {
     process.exit(1);
   }
 
-  let feedData = {};
+  if (feeds.length === 0) {
+    console.log('No new items.');
+    return;
+  }
 
-  feed = feed.items.filter((item) => done.test(item.title)); // care for done status items only for now
-  feed.forEach((item) => {
-    const { category, id } = getCategoryAndId(item.title, item.link);
+  let groupByCategoryFeeds = {};
+
+  feeds.forEach((item) => {
+    const { category, id, status } = getCategoryAndIdAndStatus(item.title, item.link);
     const dom = new JSDOM(item.content.trim());
     const contents = [...dom.window.document.querySelectorAll('td p')];
     let rating = contents.filter((el) => el.textContent.startsWith('推荐'));
@@ -77,27 +85,25 @@ async function main() {
       rating: typeof rating === 'number' ? rating : null,
       comment: typeof comment === 'string' ? comment : null, // 备注：XXX -> 短评
       time: item.isoDate, // '2021-05-30T06:49:34.000Z'
+      status,
+      category,
     };
-    if (!feedData[category]) {
-      feedData[category] = [];
+    if (!groupByCategoryFeeds[category]) {
+      groupByCategoryFeeds[category] = [];
     }
-    feedData[category].push(result);
+    groupByCategoryFeeds[category].push(result);
   });
 
-  if (feed.length === 0) {
-    console.log('No new items.');
-    return;
-  }
-
-  const categoryKeys = Object.keys(feedData);
+  // 以下是喝
+  const categoryKeys = Object.keys(groupByCategoryFeeds);
   const AllFailedItems = [];
   if (categoryKeys.length) {
     for (const cateKey of categoryKeys) {
       try {
-        const failedItems = await handleFeed(feedData[cateKey], cateKey);
+        const failedItems = await handleFeed(groupByCategoryFeeds[cateKey], cateKey);
         AllFailedItems.push(...failedItems);
       } catch (error) {
-        console.error(`Failed to handle ${cateKey} feed. `, error);
+        console.error(`Failed to handle ${cateKey} feeds. `, error);
         process.exit(1);
       }
     }
@@ -117,11 +123,19 @@ async function main() {
 
 main();
 
-async function handleFeed(feed, category) {
-  if (feed.length === 0) {
+/**
+ * Handles the feed for a given category.
+ *
+ * @param {Array} categorizedFeeds - The categorized feeds to handle.
+ * @param {string} category - The category of the feeds.
+ * @return {Array} - The list of failed items.
+ */
+async function handleFeed(categorizedFeeds, category) {
+  if (categorizedFeeds.length === 0) {
     console.log(`No new ${category} feeds.`);
     return;
   }
+
   const dbID = getDBID(category);
   if (!dbID) {
     console.log(`No notion database id for ${category}`);
@@ -129,56 +143,41 @@ async function handleFeed(feed, category) {
   }
 
   console.log(`Handling ${category} feeds...`);
-  // query current db to check whether already inserted
-  let filtered;
-  try {
-    filtered = await notion.databases.query({
-      database_id: dbID,
-      filter: {
-        or: feed.map((item) => ({
-          property: DB_PROPERTIES.ITEM_LINK,
-          url: {
-            contains: item.id,
-            // use id to check whether an item is already inserted, better than url
-            // as url may be http/https, ending with or withour /
-          },
-        })),
-      },
-    });
-  } catch (error) {
-    console.error(
-      `Failed to query ${category} database to check already inserted items. `,
-      error
-    );
+
+  const filtered = await notion.databases.query({
+    database_id: dbID,
+    filter: {
+      or: categorizedFeeds.map((item) => ({
+        property: DB_PROPERTIES.ITEM_LINK,
+        url: {
+          contains: item.id,
+        },
+      })),
+    },
+  }).catch((error) => {
+    console.error(`Failed to query ${category} database to check already inserted items. `, error);
     process.exit(1);
-  }
+  });
 
-  if (filtered.results.length) {
-    feed = feed.filter((item) => {
-      let findItem = filtered.results.filter(
-        (i) => i.properties[DB_PROPERTIES.ITEM_LINK].url === item.link
-      );
-      return !findItem.length; // if length != 0 means can find item in the filtered results, means this item already in db
-    });
-  }
+  const alreadyInsertedItems = new Set(filtered.results.map((i) => i.properties[DB_PROPERTIES.ITEM_LINK].url));
 
-  console.log(
-    `There are total ${feed.length} new ${category} item(s) need to insert.`
-  );
+  const newFeeds = categorizedFeeds.filter((item) => {
+    return !alreadyInsertedItems.has(item.link);
+  });
+
+  console.log(`There are total ${newFeeds.length} new ${category} item(s) need to insert.`);
 
   let failedItems = [];
 
-  for (let i = 0; i < feed.length; i++) {
-    const item = feed[i];
+  for (let i = 0; i < newFeeds.length; i++) {
+    const item = newFeeds[i];
     const link = item.link;
     let itemData;
     try {
       itemData = await fetchItem(link, category);
       itemData[DB_PROPERTIES.ITEM_LINK] = link;
       itemData[DB_PROPERTIES.RATING] = item.rating;
-      itemData[DB_PROPERTIES.RATING_DATE] = dayjs(item.time).format(
-        'YYYY-MM-DD'
-      );
+      itemData[DB_PROPERTIES.RATING_DATE] = dayjs(item.time).format('YYYY-MM-DD');
       itemData[DB_PROPERTIES.COMMENTS] = item.comment;
     } catch (error) {
       console.error(link, error);
@@ -201,67 +200,69 @@ async function handleFeed(feed, category) {
   return failedItems;
 }
 
-function getCategoryAndId(title, link) {
-  let m = title.match(done);
-  m = m[1];
-  let res, id;
-  switch (m) {
-    case '看过':
-      if (link.startsWith('http://movie.douban.com/')) {
-        res = CATEGORY.movie; // "看过" maybe 舞台剧
-        id = link.match(/movie\.douban\.com\/subject\/(\d+)\/?/);
-        id = id[1]; // string
-      } else {
-        res = CATEGORY.drama; // 舞台剧
-        id = link.match(/www\.douban\.com\/location\/drama\/(\d+)\/?/);
-        id = id[1]; // string
-      }
-      break;
-    case '读过':
-      res = CATEGORY.book;
-      id = link.match(/book\.douban\.com\/subject\/(\d+)\/?/);
-      id = id[1]; // string
-      break;
-    case '听过':
-      res = CATEGORY.music;
-      id = link.match(/music\.douban\.com\/subject\/(\d+)\/?/);
-      id = id[1]; // string
-      break;
-    case '玩过':
-      res = CATEGORY.game;
-      id = link.match(/www\.douban\.com\/game\/(\d+)\/?/);
-      id = id[1]; // string
-      break;
-    default:
-      break;
+/**
+ * Extracts the category, ID, and status from the given title and link.
+ *
+ * @param {string} title - The title to extract the information from.
+ * @param {string} link - The link to extract the information from.
+ * @return {object} An object containing the extracted category, ID, and status.
+ */
+function getCategoryAndIdAndStatus(title, link) {
+  const m = title.match(allStatus)[1];
+  let category, id, status;
+
+  if (m === '看过' || m === '在看' || m === '想看') {
+    if (link.startsWith('http://movie.douban.com/')) {
+      category = CATEGORY.movie;
+      id = link.match(/movie\.douban\.com\/subject\/(\d+)\/?/)[1];
+    } else {
+      category = CATEGORY.drama;
+      id = link.match(/www\.douban\.com\/location\/drama\/(\d+)\/?/)[1];
+    }
+    status = m === '看过' ? 'complete' : m === '在看' ? 'progress' : 'wishlist';
+  } else if (m === '读过' || m === '在读' || m === '想读') {
+    category = CATEGORY.book;
+    id = link.match(/book\.douban\.com\/subject\/(\d+)\/?/)[1];
+    status = m === '读过' ? 'complete' : m === '在读' ? 'progress' : 'wishlist';
+  } else if (m === '听过' || m === '在读' || m === '想听') {
+    category = CATEGORY.music;
+    id = link.match(/music\.douban\.com\/subject\/(\d+)\/?/)[1];
+    status = m === '听过' ? 'complete' : m === '在听' ? 'progress' : 'wishlist';
+  } else if (m === '玩过' || m === '在玩' || m === '想玩') {
+    category = CATEGORY.game;
+    id = link.match(/www\.douban\.com\/game\/(\d+)\/?/)[1];
+    status = m === '玩过' ? 'complete' : m === '在玩' ? 'progress' : 'wishlist';
+  } else {
+    return { category: undefined, id: undefined, status: undefined };
   }
-  return { category: res, id };
+
+  return { category, id, status };
 }
 
+/**
+ * Retrieves the database ID for the given category.
+ *
+ * @param {string} category - The category of the item.
+ * @return {string} The corresponding database ID.
+ */
 function getDBID(category) {
-  let id;
-  switch (category) {
-    case CATEGORY.movie:
-      id = movieDBID;
-      break;
-    case CATEGORY.music:
-      id = musicDBID;
-      break;
-    case CATEGORY.book:
-      id = bookDBID;
-      break;
-    case CATEGORY.game:
-      id = gameDBID;
-      break;
-    case CATEGORY.drama:
-      id = dramaDBID;
-      break;
-    default:
-      break;
-  }
-  return id;
+  const databases = {
+    [CATEGORY.movie]: movieDBID,
+    [CATEGORY.music]: musicDBID,
+    [CATEGORY.book]: bookDBID,
+    [CATEGORY.game]: gameDBID,
+    [CATEGORY.drama]: dramaDBID,
+  };
+  return databases[category];
 }
 
+/**
+ * Fetches an item from douban webpage based on the given link and category.
+ *
+ * @param {string} link - The link to fetch the item from.
+ * @param {string} category - The category of the item (movie, music, book, game, drama).
+ * @return {Object} - An object containing the fetched item data.
+ */
 async function fetchItem(link, category) {
   console.log(`Fetching ${category} item with link: ${link}`);
   const itemData = {};
@@ -430,6 +431,15 @@ async function fetchItem(link, category) {
   return itemData;
 }
 
+/**
+ * Generates the value for a property based on the given parameters, ready to insert
+ * into notion database.
+ *
+ * @param {any} value - The value to be used for generating the property value.
+ * @param {string} type - The type of the property.
+ * @param {string} key - The key associated with the property.
+ * @return {object} The generated value for the property.
+ */
 function getPropertyValye(value, type, key) {
   let res = null;
   switch (type) {
@@ -521,6 +531,13 @@ function getPropertyValye(value, type, key) {
   return res;
 }
 
+/**
+ * Inserts an item into Notion database.
+ *
+ * @param {Object} itemData - The data of the item to be inserted.
+ * @param {string} category - The category of the item.
+ * @return {boolean} - Returns true if the item is successfully inserted, false otherwise.
+ */
 async function addToNotion(itemData, category) {
   console.log(
     'Going to insert ',
