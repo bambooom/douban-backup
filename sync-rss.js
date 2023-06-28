@@ -35,6 +35,12 @@ const EMOJI = {
   game: '🕹',
   drama: '💃🏻',
 };
+// follow the schema value of Neodb
+const STATUS = {
+  Complete: 'complete',
+  Progress: 'progress',
+  Wishlist: 'wishlist',
+};
 
 const DOUBAN_USER_ID = process.env.DOUBAN_USER_ID;
 const notion = new Client({
@@ -59,15 +65,18 @@ async function main() {
     process.exit(1);
   }
 
+  feeds = feeds.items;
+
   if (feeds.length === 0) {
     console.log('No new items.');
     return;
   }
 
   let groupByCategoryFeeds = {};
+  const allFeeds = [];
 
   feeds.forEach((item) => {
-    const { category, id, status } = getCategoryAndIdAndStatus(item.title, item.link);
+    const { category, id, status } = extractItemInfo(item.title, item.link);
     const dom = new JSDOM(item.content.trim());
     const contents = [...dom.window.document.querySelectorAll('td p')];
     let rating = contents.filter((el) => el.textContent.startsWith('推荐'));
@@ -88,24 +97,35 @@ async function main() {
       status,
       category,
     };
-    if (!groupByCategoryFeeds[category]) {
-      groupByCategoryFeeds[category] = [];
+    if (status === STATUS.Complete) {
+      if (!groupByCategoryFeeds[category]) {
+        groupByCategoryFeeds[category] = [];
+      }
+      groupByCategoryFeeds[category].push(result);
     }
-    groupByCategoryFeeds[category].push(result);
+    allFeeds.push(result);
   });
 
-  // 以下是喝
+  // 以下是和 notion 交互
   const categoryKeys = Object.keys(groupByCategoryFeeds);
   const AllFailedItems = [];
   if (categoryKeys.length) {
     for (const cateKey of categoryKeys) {
       try {
-        const failedItems = await handleFeed(groupByCategoryFeeds[cateKey], cateKey);
+        const failedItems = await handleFeedNotion(groupByCategoryFeeds[cateKey], cateKey);
         AllFailedItems.push(...failedItems);
       } catch (error) {
         console.error(`Failed to handle ${cateKey} feeds. `, error);
         process.exit(1);
       }
+    }
+  }
+
+  if (neodbToken) {
+    // 同步标记到 neodb
+    for (let i = 0; i < allFeeds.length; i++) {
+      const item = allFeeds[i];
+      await handleFeedNeodb(item);
     }
   }
 
@@ -123,6 +143,70 @@ async function main() {
 
 main();
 
+async function handleFeedNeodb(item) {
+  // fetch item by douban link
+  const neodbItem = await got('https://neodb.social/api/catalog/fetch', {
+    searchParams: {
+      url: item.link,
+    },
+    headers: {
+      accept: 'application/json',
+    },
+  }).json();
+  // 条目不存在的话会被创建，但此时会返回 {message: 'Fetch in progress'}
+  if (neodbItem.uuid) {
+    try {
+      const mark = await got(
+        `https://neodb.social/api/me/shelf/item/${neodbItem.uuid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${neodbToken}`,
+            accept: 'application/json',
+          },
+        }
+      ).json();
+      if (mark.shelf_type !== item.status) {
+        // 标记状态不一样，所以更新标记
+        await markItemNeodb(neodbItem, item);
+      }
+    } catch (error) {
+      if (error.code === 'ERR_NON_2XX_3XX_RESPONSE') {
+        // 标记不存在，所以创建标记
+        await markItemNeodb(neodbItem, item);
+      }
+    }
+  } else {
+    await sleep(1000); // wait for the item to be created
+    await handleFeedNeodb(item); // handle this feed again
+  }
+}
+
+async function markItemNeodb(neodbItem, item) {
+  console.log('Going to mark on NeoDB: ', neodbItem.title);
+  try {
+    await got.post(`https://neodb.social/api/me/shelf/item/${neodbItem.uuid}`, {
+      headers: {
+        Authorization: `Bearer ${neodbToken}`,
+        accept: 'application/json',
+      },
+      json: {
+        shelf_type: item.status,
+        visibility: 2,
+        comment_text: item.comment,
+        rating_grade: item.rating ? item.rating * 2 : undefined,
+        created_time: item.date,
+        post_to_fediverse: false,
+      },
+    });
+  } catch (error) {
+    console.error(
+      'Failed to mark item: ', neodbItem?.item?.title,
+        ' with error: ',
+      error
+    );
+  }
+}
+
 /**
  * Handles the feed for a given category.
  *
@@ -130,7 +214,7 @@ main();
  * @param {string} category - The category of the feeds.
  * @return {Array} - The list of failed items.
  */
-async function handleFeed(categorizedFeeds, category) {
+async function handleFeedNotion(categorizedFeeds, category) {
   if (categorizedFeeds.length === 0) {
     console.log(`No new ${category} feeds.`);
     return;
@@ -207,7 +291,7 @@ async function handleFeed(categorizedFeeds, category) {
  * @param {string} link - The link to extract the information from.
  * @return {object} An object containing the extracted category, ID, and status.
  */
-function getCategoryAndIdAndStatus(title, link) {
+function extractItemInfo(title, link) {
   const m = title.match(allStatus)[1];
   let category, id, status;
 
@@ -219,19 +303,19 @@ function getCategoryAndIdAndStatus(title, link) {
       category = CATEGORY.drama;
       id = link.match(/www\.douban\.com\/location\/drama\/(\d+)\/?/)[1];
     }
-    status = m === '看过' ? 'complete' : m === '在看' ? 'progress' : 'wishlist';
+    status = m === '看过' ? STATUS.Complete : m === '在看' ? STATUS.Progress : STATUS.Wishlist;
   } else if (m === '读过' || m === '在读' || m === '想读') {
     category = CATEGORY.book;
     id = link.match(/book\.douban\.com\/subject\/(\d+)\/?/)[1];
-    status = m === '读过' ? 'complete' : m === '在读' ? 'progress' : 'wishlist';
+    status = m === '读过' ? STATUS.Complete : m === '在读' ? STATUS.Progress : STATUS.Wishlist;
   } else if (m === '听过' || m === '在读' || m === '想听') {
     category = CATEGORY.music;
     id = link.match(/music\.douban\.com\/subject\/(\d+)\/?/)[1];
-    status = m === '听过' ? 'complete' : m === '在听' ? 'progress' : 'wishlist';
+    status = m === '听过' ? STATUS.Complete : m === '在听' ? STATUS.Progress : STATUS.Wishlist;
   } else if (m === '玩过' || m === '在玩' || m === '想玩') {
     category = CATEGORY.game;
     id = link.match(/www\.douban\.com\/game\/(\d+)\/?/)[1];
-    status = m === '玩过' ? 'complete' : m === '在玩' ? 'progress' : 'wishlist';
+    status = m === '玩过' ? STATUS.Complete : m === '在玩' ? STATUS.Progress : STATUS.Wishlist;
   } else {
     return { category: undefined, id: undefined, status: undefined };
   }
