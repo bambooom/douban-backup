@@ -143,6 +143,12 @@ RSS 的好处一个是轻量，但又包含了个人标记的最重要的几个�
 
 [查看 workflow 运行结果 ->](https://github.com/bambooom/douban-backup/actions/workflows/sync-rss.js.yml)
 
+## sync to NeoDB
+
+> [NeoDB 文档](https://neodb.social/developer/)
+
+在文档页面先生成一个 Token，然后给 repo 添加一个 secret 叫 `NEODB_API_TOKEN`。
+即可开启在豆瓣的标记会同步到 NeoDB 的功能。
 
 ## todo
 - [x] ~~补全 notion 中的海报~~
@@ -150,6 +156,6 @@ RSS 的好处一个是轻量，但又包含了个人标记的最重要的几个�
 - [x] ~~userscript 添加导出 在* 和 想* 的功能~~
   - 想* 的部分已更新
   - 在* 的部分感觉个人需求实在不太大，已搁置
+- [x] 豆瓣的标记同步更新到 NeoDB
 - [ ] 添加 *在\** 或者 *想\** 列表，考虑一下如何显示？
-- [ ] 从别处更新条目，比如 neodb，因为部分条目在豆瓣被删除或未创建
-  - neodb API: https://neodb.social/developer/
+- [ ] 从别处更新条目，比如 NeoDB，因为部分条目在豆瓣被删除或未创建
