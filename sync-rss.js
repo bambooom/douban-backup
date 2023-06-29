@@ -122,11 +122,13 @@ async function main() {
   }
 
   if (neodbToken) {
+    console.log('Going to sync to NeoDB...');
     // 同步标记到 neodb
     for (let i = 0; i < allFeeds.length; i++) {
       const item = allFeeds[i];
       await handleFeedNeodb(item);
     }
+    console.log('NeoDB synced ✨');
   }
 
   if (AllFailedItems.length) {
@@ -182,7 +184,7 @@ async function handleFeedNeodb(item) {
 }
 
 async function markItemNeodb(neodbItem, item) {
-  console.log('Going to mark on NeoDB: ', neodbItem.title);
+  console.log('Going to mark on NeoDB: ', `${neodbItem.title}[${item.link}]`);
   try {
     await got.post(`https://neodb.social/api/me/shelf/item/${neodbItem.uuid}`, {
       headers: {
