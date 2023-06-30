@@ -452,7 +452,7 @@ async function fetchItem(link, category) {
             .replace('作者:', '')
             .trim();
         }
-      } else if (text.startsWith('出版社:')) {
+      } else if (text.startsWith('出版社')) {
         itemData[DB_PROPERTIES.PUBLISHING_HOUSE] = nextText;
       } else if (text.startsWith('原作名')) {
         itemData[DB_PROPERTIES.BOOK_TITLE] += nextText;
