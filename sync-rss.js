@@ -453,7 +453,7 @@ async function fetchItem(link, category) {
             .trim();
         }
       } else if (text.startsWith('出版社')) {
-        itemData[DB_PROPERTIES.PUBLISHING_HOUSE] = text;
+        itemData[DB_PROPERTIES.PUBLISHING_HOUSE] = nextText;
       } else if (text.startsWith('原作名')) {
         itemData[DB_PROPERTIES.BOOK_TITLE] += nextText;
       } else if (text.startsWith('出版年')) {
