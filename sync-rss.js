@@ -453,7 +453,12 @@ async function fetchItem(link, category) {
             .trim();
         }
       } else if (text.startsWith('出版社')) {
-        itemData[DB_PROPERTIES.PUBLISHING_HOUSE] = nextText;
+        if (i.nextElementSibling.tagName === 'BR') {
+          itemData[DB_PROPERTIES.PUBLISHING_HOUSE] = nextText;
+        } else {
+          // 出版社可能有单独链接 <a>上海三联书店</a>
+          itemData[DB_PROPERTIES.PUBLISHING_HOUSE] = i.nextElementSibling.textContent.trim();
+        }
       } else if (text.startsWith('原作名')) {
         itemData[DB_PROPERTIES.BOOK_TITLE] += nextText;
       } else if (text.startsWith('出版年')) {
