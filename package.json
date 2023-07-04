@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@notionhq/client": "^2.2.6",
-    "dayjs": "^1.11.8",
+    "dayjs": "^1.11.9",
     "dotenv": "^16.3.1",
     "fast-csv": "^4.3.6",
     "got": "^13.0.0",
