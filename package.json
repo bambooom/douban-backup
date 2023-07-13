@@ -2,7 +2,7 @@
   "name": "douban-backup",
   "version": "0.0.1",
   "description": "script to handle douban backup",
-  "exports": "./index.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,20 +13,16 @@
     "csv",
     "rss"
   ],
-  "type": "module",
   "author": "zhuzi <nmz89825@gmail.com>",
   "license": "MIT",
-  "engines": {
-    "node": ">=16"
-  },
   "dependencies": {
-    "@notionhq/client": "^2.2.7",
-    "dayjs": "^1.11.9",
-    "dotenv": "^16.3.1",
+    "@notionhq/client": "^2.2.3",
+    "dayjs": "^1.11.7",
+    "dotenv": "^16.0.3",
     "fast-csv": "^4.3.6",
-    "got": "^13.0.0",
-    "jsdom": "^22.1.0",
-    "rss-parser": "^3.13.0"
+    "got": "^11.8.5",
+    "jsdom": "^21.1.0",
+    "rss-parser": "^3.12.0"
   },
   "devDependencies": {
     "image-downloader": "^4.3.0"
