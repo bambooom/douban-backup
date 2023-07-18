@@ -118,13 +118,13 @@ jobs:
 
 
 
-    # 把修改后的数据提交到 GitHub 仓库
-    - name: Git Add and Commit
-      if: ${{ env.REMOTE_COUNT != env.CURRENT_COUNT }}
-      uses: EndBug/add-and-commit@v9
-      with:
-        message: 'chore(data): update neodb data'
-        add: './data/neodb'
+#     # 把修改后的数据提交到 GitHub 仓库
+#     - name: Git Add and Commit
+#       if: ${{ env.REMOTE_COUNT != env.CURRENT_COUNT }}
+#       uses: EndBug/add-and-commit@v9
+#       with:
+#         message: 'chore(data): update neodb data'
+#         add: './data/neodb'
 
   NeoDoubanBook:
     name: Sync NeoDB Book Data
@@ -208,13 +208,13 @@ jobs:
 
 
 
-    # 把修改后的数据提交到 GitHub 仓库
-    - name: Git Add and Commit
-      if: ${{ env.REMOTE_COUNT != env.CURRENT_COUNT }}
-      uses: EndBug/add-and-commit@v9
-      with:
-        message: 'chore(data): update neodb data'
-        add: './data/neodb'
+#     # 把修改后的数据提交到 GitHub 仓库
+#     - name: Git Add and Commit
+#       if: ${{ env.REMOTE_COUNT != env.CURRENT_COUNT }}
+#       uses: EndBug/add-and-commit@v9
+#       with:
+#         message: 'chore(data): update neodb data'
+#         add: './data/neodb'
         
   DoubanBack:
     name: Douban Data Sync
@@ -244,8 +244,21 @@ jobs:
         format: json
         dir: ./data/douban
 
-    - name: Git Add and Commit
-      uses: EndBug/add-and-commit@v9
-      with:
-        message: 'chore(data): update douban data'
-        add: './data/douban'
+#     - name: Git Add and Commit
+#       uses: EndBug/add-and-commit@v9
+#       with:
+#         message: 'chore(data): update douban data'
+#         add: './data/douban'
+
+  commit:
+    runs-on: ubuntu-latest
+    needs: [DoubanBack, NeoDoubanMovie, NeoDoubanBook]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Commit code
+        uses: EndBug/add-and-commit@v9
+        with:
+         message: 'chore(data): update douban back data'
+         add: './data'
