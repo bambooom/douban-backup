@@ -261,7 +261,7 @@ jobs:
         uses: EndBug/add-and-commit@v9
         with:
          message: 'chore(data): update douban back data'
-         add: '/data'
+         add: '.'
          
 #   commit_changes:
 #     needs: [DoubanBack, NeoDoubanMovie, NeoDoubanBook]
