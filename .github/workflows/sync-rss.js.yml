@@ -261,4 +261,25 @@ jobs:
         uses: EndBug/add-and-commit@v9
         with:
          message: 'chore(data): update douban back data'
-         add: './data'
+         add: '/data'
+         
+#   commit_changes:
+#     needs: [DoubanBack, NeoDoubanMovie, NeoDoubanBook]
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v2
+
+#       - name: Copy JSON files to root directory
+#         run: |
+#           # 将 data 文件夹中的 JSON 文件复制到根目录
+#           cp -r data/* .
+
+#       - name: Commit and push changes
+#         run: |
+#           git config --global user.name 'Your Name'
+#           git config --global user.email 'your.email@example.com'
+#           git add .
+#           git commit -m 'Commit all changes'
+#           git push
