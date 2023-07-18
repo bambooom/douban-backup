@@ -21,7 +21,7 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     env:
-      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      #NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
       NOTION_MOVIE_DATABASE_ID: ${{ secrets.NOTION_MOVIE_DATABASE_ID }}
       NOTION_BOOK_DATABASE_ID: ${{ secrets.NOTION_BOOK_DATABASE_ID }}
       DOUBAN_USER_ID: ${{ secrets.DOUBAN_USER_ID }}
