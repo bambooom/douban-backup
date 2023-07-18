@@ -46,6 +46,7 @@ const DOUBAN_USER_ID = process.env.DOUBAN_USER_ID;
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
 });
+const notionToken = process.env.NOTION_TOKEN;
 const movieDBID = process.env.NOTION_MOVIE_DATABASE_ID;
 const musicDBID = process.env.NOTION_MUSIC_DATABASE_ID;
 const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
@@ -107,16 +108,18 @@ async function main() {
   });
 
   // 以下是和 notion 交互
-  const categoryKeys = Object.keys(groupByCategoryFeeds);
-  const AllFailedItems = [];
-  if (categoryKeys.length) {
-    for (const cateKey of categoryKeys) {
-      try {
-        const failedItems = await handleFeedNotion(groupByCategoryFeeds[cateKey], cateKey);
-        AllFailedItems.push(...failedItems);
-      } catch (error) {
-        console.error(`Failed to handle ${cateKey} feeds. `, error);
-        process.exit(1);
+  if (notionToken) {
+    const categoryKeys = Object.keys(groupByCategoryFeeds);
+    const AllFailedItems = [];
+    if (categoryKeys.length) {
+      for (const cateKey of categoryKeys) {
+        try {
+          const failedItems = await handleFeedNotion(groupByCategoryFeeds[cateKey], cateKey);
+          AllFailedItems.push(...failedItems);
+        } catch (error) {
+          console.error(`Failed to handle ${cateKey} feeds. `, error);
+          process.exit(1);
+        }
       }
     }
   }
