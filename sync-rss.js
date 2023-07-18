@@ -122,6 +122,18 @@ async function main() {
         }
       }
     }
+
+    
+    if (AllFailedItems.length) {
+      console.log('Failed to handle the following feeds:');
+      for (let i = 0; i < AllFailedItems.length; i++) {
+        const item = AllFailedItems[i];
+        console.log(`${item.title}: ${item.link}`);
+      }
+      process.exit(1);
+    } else {
+      console.log('All feeds sync to Notion.');
+    }
   }
 
   if (neodbToken) {
@@ -134,16 +146,6 @@ async function main() {
     console.log('NeoDB synced ✨');
   }
 
-  if (AllFailedItems.length) {
-    console.log('Failed to handle the following feeds:');
-    for (let i = 0; i < AllFailedItems.length; i++) {
-      const item = AllFailedItems[i];
-      console.log(`${item.title}: ${item.link}`);
-    }
-    process.exit(1);
-  } else {
-    console.log('All feeds are handled.');
-  }
 };
 
 main();
