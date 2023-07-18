@@ -70,7 +70,7 @@ jobs:
         curl -X 'GET' \
         'https://neodb.social/api/me/shelf/complete?category=movie&page=1' \
         -H 'accept: application/json' \
-        -H 'Authorization: Bearer ${{ secrets.NEODB_ACCESS_TOKEN }}' > movie1.json
+        -H 'Authorization: Bearer ${{ secrets.NEODB_API_TOKEN }}' > movie1.json
 
         # 获取 NeoDB 上的标记数
         REMOTE_COUNT() {
@@ -107,7 +107,7 @@ jobs:
         # 下载文件并保存为对应的文件名
         curl -X 'GET' "$url" \
           -H 'accept: application/json' \
-          -H 'Authorization: Bearer ${{ secrets.NEODB_ACCESS_TOKEN }}' > "$filename"
+          -H 'Authorization: Bearer ${{ secrets.NEODB_API_TOKEN }}' > "$filename"
         done
 
         # 把所有数据合并成一个文件
@@ -160,7 +160,7 @@ jobs:
         curl -X 'GET' \
         'https://neodb.social/api/me/shelf/complete?category=book&page=1' \
         -H 'accept: application/json' \
-        -H 'Authorization: Bearer ${{ secrets.NEODB_ACCESS_TOKEN }}' > book.json
+        -H 'Authorization: Bearer ${{ secrets.NEODB_API_TOKEN }}' > book.json
 
         # 获取 NeoDB 上的标记数
         REMOTE_COUNT() {
@@ -197,7 +197,7 @@ jobs:
         # 下载文件并保存为对应的文件名
         curl -X 'GET' "$url" \
           -H 'accept: application/json' \
-          -H 'Authorization: Bearer ${{ secrets.NEODB_ACCESS_TOKEN }}' > "$filename"
+          -H 'Authorization: Bearer ${{ secrets.NEODB_API_TOKEN }}' > "$filename"
         done
 
         # 把所有数据合并成一个文件
