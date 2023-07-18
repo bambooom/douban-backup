@@ -35,3 +35,217 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
     - run: node sync-rss.js || exit 1
+    
+
+  NeoDoubanMovie:
+    name: Sync NeoDB Movie Data
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # 检查是否安装了 JQ
+    - name: Check JQ
+      run: |
+        if ! command -v jq &> /dev/null; then
+          echo "jq is not installed. Installing..."
+          sudo apt-get update
+          sudo apt-get install -y jq
+        else
+          echo "jq is already installed."
+        fi
+        # 把当前目录保存到环境变量中
+        echo "WORK_DIR=$(pwd)" >> $GITHUB_ENV
+
+    # 获取本地现有文件的标记数
+    - name: Get Current Count
+      run: |
+        CURRENT_COUNT() {
+          jq '.count' data/neodb/movie.json
+        }
+        echo "CURRENT_COUNT=$(CURRENT_COUNT)" >> $GITHUB_ENV
+
+    - name: Get NeoDB JSON and Count
+      run: |
+        curl -X 'GET' \
+        'https://neodb.social/api/me/shelf/complete?category=movie&page=1' \
+        -H 'accept: application/json' \
+        -H 'Authorization: Bearer ${{ secrets.NEODB_ACCESS_TOKEN }}' > movie1.json
+
+        # 获取 NeoDB 上的标记数
+        REMOTE_COUNT() {
+          jq '.count' movie1.json
+        }
+        echo "REMOTE_COUNT=$(REMOTE_COUNT)" >> $GITHUB_ENV
+
+    # 对比本地的标记数和远程标记数，相等就跳过，不相等就下载新数据
+    - name: Count Compare
+      run: |
+        if [ "${{ env.REMOTE_COUNT }}" = "${{ env.CURRENT_COUNT }}" ]; then
+          echo "Variables are equal. Skipping the next steps."
+          exit 0
+        else
+          echo "Variables are not equal. Running the next steps."
+        fi
+
+    # 下载所有数据
+    - name: Get All NeoDB Count
+      if: ${{ env.REMOTE_COUNT != env.CURRENT_COUNT }}
+      run: |
+        #从 movie1.json 中提取 pages 字段的值
+        pages=$(jq '.pages' movie1.json)
+
+        # 个人使用，新建 WorkDIR ，排除 vercel.json 和 package.json 等
+        mkdir neodb
+        cd neodb
+
+        # 循环下载文件，因为 page 1 已经下载过了，从 2 开始
+        for ((i=1; i<=$pages; i++)); do
+          url="https://neodb.social/api/me/shelf/complete?category=movie&page=$i"
+          filename="movie$i.json"
+
+        # 下载文件并保存为对应的文件名
+        curl -X 'GET' "$url" \
+          -H 'accept: application/json' \
+          -H 'Authorization: Bearer ${{ secrets.NEODB_ACCESS_TOKEN }}' > "$filename"
+        done
+
+        # 把所有数据合并成一个文件
+        jq -c -s '{data: map(.data[]) | unique | sort_by(.created_time) | reverse, pages: map(.pages)[0], count: map(.count)[0]}' *.json > movie.json
+
+        # 更新 NeoDB 数据
+        cp -f movie.json ${{ env.WORK_DIR }}/data/neodb/
+
+
+
+    # 把修改后的数据提交到 GitHub 仓库
+    - name: Git Add and Commit
+      if: ${{ env.REMOTE_COUNT != env.CURRENT_COUNT }}
+      uses: EndBug/add-and-commit@v9
+      with:
+        message: 'chore(data): update neodb data'
+        add: './data/neodb'
+
+  NeoDoubanBook:
+    name: Sync NeoDB Book Data
+    runs-on: ubuntu-latest
+    steps:
+    
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # 检查是否安装了 JQ
+    - name: Check JQ
+      run: |
+        if ! command -v jq &> /dev/null; then
+          echo "jq is not installed. Installing..."
+          sudo apt-get update
+          sudo apt-get install -y jq
+        else
+          echo "jq is already installed."
+        fi
+        # 把当前目录保存到环境变量中
+        echo "WORK_DIR=$(pwd)" >> $GITHUB_ENV
+
+    # 获取本地现有文件的标记数
+    - name: Get Current Count
+      run: |
+        CURRENT_COUNT() {
+          jq '.count' data/neodb/book.json
+        }
+        echo "CURRENT_COUNT=$(CURRENT_COUNT)" >> $GITHUB_ENV
+
+    - name: Get NeoDB JSON and Count
+      run: |
+        curl -X 'GET' \
+        'https://neodb.social/api/me/shelf/complete?category=book&page=1' \
+        -H 'accept: application/json' \
+        -H 'Authorization: Bearer ${{ secrets.NEODB_ACCESS_TOKEN }}' > book.json
+
+        # 获取 NeoDB 上的标记数
+        REMOTE_COUNT() {
+          jq '.count' book.json
+        }
+        echo "REMOTE_COUNT=$(REMOTE_COUNT)" >> $GITHUB_ENV
+
+    # 对比本地的标记数和远程标记数，相等就跳过，不相等就下载新数据
+    - name: Count Compare
+      run: |
+        if [ "${{ env.REMOTE_COUNT }}" = "${{ env.CURRENT_COUNT }}" ]; then
+          echo "Variables are equal. Skipping the next steps."
+          exit 0
+        else
+          echo "Variables are not equal. Running the next steps."
+        fi
+
+    # 下载所有数据
+    - name: Get All NeoDB Count
+      if: ${{ env.REMOTE_COUNT != env.CURRENT_COUNT }}
+      run: |
+        #从 book.json 中提取 pages 字段的值
+        pages=$(jq '.pages' book.json)
+
+        # 个人使用，新建 WorkDIR ，排除 vercel.json 和 package.json 等
+        mkdir neodb
+        cd neodb
+
+        # 循环下载文件，因为 page 1 已经下载过了，从 2 开始
+        for ((i=1; i<=$pages; i++)); do
+          url="https://neodb.social/api/me/shelf/complete?category=book&page=$i"
+          filename="book$i.json"
+
+        # 下载文件并保存为对应的文件名
+        curl -X 'GET' "$url" \
+          -H 'accept: application/json' \
+          -H 'Authorization: Bearer ${{ secrets.NEODB_ACCESS_TOKEN }}' > "$filename"
+        done
+
+        # 把所有数据合并成一个文件
+        jq -c -s '{data: map(.data[]) | unique | sort_by(.created_time) | reverse, pages: map(.pages)[0], count: map(.count)[0]}' *.json > book.json
+
+        # 更新 NeoDB 数据
+        cp -f book.json ${{ env.WORK_DIR }}/data/neodb/
+
+
+
+    # 把修改后的数据提交到 GitHub 仓库
+    - name: Git Add and Commit
+      if: ${{ env.REMOTE_COUNT != env.CURRENT_COUNT }}
+      uses: EndBug/add-and-commit@v9
+      with:
+        message: 'chore(data): update neodb data'
+        add: './data/neodb'
+        
+  DoubanBack:
+    name: Douban Data Sync
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: delete old file
+      run: |
+        rm -rf ./data
+
+    - name: Fetch Movie Data JSON
+      uses: lizheming/doumark-action@master
+      with:
+        id: trax.long
+        type: movie
+        format: json
+        dir: ./data/douban
+        
+
+    - name: Fetch Book Data JSON
+      uses: lizheming/doumark-action@master
+      with:
+        id: trax.long
+        type: book
+        format: json
+        dir: ./data/douban
+
+    - name: Git Add and Commit
+      uses: EndBug/add-and-commit@v9
+      with:
+        message: 'chore(data): update douban data'
+        add: './data/douban'
