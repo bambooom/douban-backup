@@ -20,7 +20,7 @@ const done = /^(看过|听过|读过|玩过)/;
 const doing = /^(在看|在听|在读|在玩)/;
 const wishlist = /^(想看|想听|想读|想玩)/;
 const allStatus =
-  /^(看过|听过|读过|玩过|在看|在听|在读|在玩|想看|想听|想读|想玩)/;
+  /^(?:最近)?(看过|听过|读过|玩过|在看|在听|在读|在玩|想看|想听|想读|想玩)/;
 const CATEGORY = {
   movie: 'movie',
   music: 'music',
@@ -196,7 +196,7 @@ async function markItemNeodb(neodbItem, item) {
         visibility: 2,
         comment_text: item.comment,
         rating_grade: item.rating ? item.rating * 2 : undefined,
-        created_time: item.date,
+        created_time: item.time,
         post_to_fediverse: false,
       },
     });
