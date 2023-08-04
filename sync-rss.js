@@ -272,7 +272,10 @@ async function handleFeedNotion(categorizedFeeds, category) {
     if (itemData) {
       const successful = await addToNotion(itemData, category);
       if (!successful) {
-        failedItems.push(item);
+        failedItems.push({
+          link,
+          title: itemData.title,
+        });
       }
       await sleep(1000);
     }
