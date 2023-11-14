@@ -293,7 +293,7 @@
         title = title.concat(['上映日期', '制片国家', '条目链接']);
         key = key.concat(['country', 'link']);
       } else if (type === BOOK) {
-        title.unshift('书名');
+        title.unshift('书');
         title = title.concat(['出版日期', '作者', '条目链接']);
         key = key.concat(['author', 'link']);
       } else if (type === MUSIC) {
