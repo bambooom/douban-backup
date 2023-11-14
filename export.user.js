@@ -289,15 +289,15 @@
       let title = isWish ? ['标题'] : ['个人评分', '打分日期', '我的短评'];
       let key = isWish ? ['title', 'release_date'] : ['title', 'rating', 'rating_date', 'comment', 'release_date'];
       if (type === MOVIE) {
-        title.unshift('电影/电视剧/番组');
+        title.unshift('标题');
         title = title.concat(['上映日期', '制片国家', '条目链接']);
         key = key.concat(['country', 'link']);
       } else if (type === BOOK) {
-        title.unshift('书名');
+        title.unshift('标题');
         title = title.concat(['出版日期', '作者', '条目链接']);
         key = key.concat(['author', 'link']);
       } else if (type === MUSIC) {
-        title.unshift('单曲/专辑');
+        title.unshift('标题');
         title = title.concat(['发行日期', '音乐家', '条目链接']);
         key = key.concat(['musician', 'link']);
       } else if (type === GAME) {
@@ -305,7 +305,7 @@
         title = title.concat(['发行日期', '条目链接']);
         key.push('link');
       } else if (type === DRAMA) {
-        title.unshift('舞台剧名称');
+        title.unshift('标题');
         title = title.concat(['混合信息', '条目链接']);
         key.pop();
         key = key.concat(['mixed_info', 'link']);
