@@ -289,15 +289,15 @@
       let title = isWish ? ['标题'] : ['个人评分', '打分日期', '我的短评'];
       let key = isWish ? ['title', 'release_date'] : ['title', 'rating', 'rating_date', 'comment', 'release_date'];
       if (type === MOVIE) {
-        title.unshift('标题');
+        title.unshift('影/剧');
         title = title.concat(['上映日期', '制片国家', '条目链接']);
         key = key.concat(['country', 'link']);
       } else if (type === BOOK) {
-        title.unshift('标题');
+        title.unshift('书名');
         title = title.concat(['出版日期', '作者', '条目链接']);
         key = key.concat(['author', 'link']);
       } else if (type === MUSIC) {
-        title.unshift('标题');
+        title.unshift('专辑');
         title = title.concat(['发行日期', '音乐家', '条目链接']);
         key = key.concat(['musician', 'link']);
       } else if (type === GAME) {
