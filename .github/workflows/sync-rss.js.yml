@@ -17,8 +17,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [20.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/previous-releases
 
     env:
       NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}

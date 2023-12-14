@@ -17,15 +17,15 @@
   "author": "zhuzi <nmz89825@gmail.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=16"
+    "node": ">=20"
   },
   "dependencies": {
-    "@notionhq/client": "^2.2.13",
+    "@notionhq/client": "^2.2.14",
     "dayjs": "^1.11.10",
     "dotenv": "^16.3.1",
     "fast-csv": "^4.3.6",
-    "got": "^13.0.0",
-    "jsdom": "^22.1.0",
+    "got": "^14.0.0",
+    "jsdom": "^23.0.1",
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {
