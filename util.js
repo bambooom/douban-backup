@@ -2,7 +2,7 @@ export const DB_PROPERTIES = {
   NAME: 'name', // 用于log
   // movie
   POSTER: '海报',
-  MOVIE_TITLE: '电影/电视剧/番组',
+  MOVIE_TITLE: '标题',
   YEAR: '上映年份',
   DIRECTORS: '导演',
   ACTORS: '主演',
@@ -10,19 +10,19 @@ export const DB_PROPERTIES = {
   IMDB_LINK: 'IMDb 链接',
   // music
   COVER: '封面', // music, book, game
-  MUSIC_TITLE: '单曲/专辑',
+  MUSIC_TITLE: '标题',
   RELEASE_DATE: '发行日期', // music and game
   MUSICIAN: '音乐家',
   // book
-  BOOK_TITLE: '书名',
+  BOOK_TITLE: '标题',
   PUBLICATION_DATE: '出版日期',
   PUBLISHING_HOUSE: '出版社',
   WRITER: '作者',
   ISBN: 'ISBN',
   // game
-  GAME_TITLE: '游戏名称',
+  GAME_TITLE: '标题',
   // drama
-  DRAMA_TITLE: '舞台剧名称',
+  DRAMA_TITLE: '标题',
   // common
   RATING: '个人评分', // common
   RATING_DATE: '打分日期', // common
