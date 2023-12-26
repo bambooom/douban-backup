@@ -195,7 +195,7 @@ async function markItemNeodb(neodbItem, item) {
         shelf_type: item.status,
         visibility: 2,
         comment_text: item.comment,
-        rating_grade: item.rating ? item.rating * 2 : undefined,
+        rating_grade: item.rating ? item.rating * 2 : null,
         created_time: item.time,
         post_to_fediverse: false,
       },
