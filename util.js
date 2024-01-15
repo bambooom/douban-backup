@@ -1,33 +1,54 @@
-export const DB_PROPERTIES = {
-  NAME: 'name', // 用于log
-  // movie
-  POSTER: '海报',
-  MOVIE_TITLE: '电影/电视剧/番组',
-  YEAR: '上映年份',
-  DIRECTORS: '导演',
-  ACTORS: '主演',
-  GENRE: '类型', // movie, game, drama
-  IMDB_LINK: 'IMDb 链接',
-  // music
-  COVER: '封面', // music, book, game
-  MUSIC_TITLE: '单曲/专辑',
-  RELEASE_DATE: '发行日期', // music and game
-  MUSICIAN: '音乐家',
-  // book
-  BOOK_TITLE: '书名',
-  PUBLICATION_DATE: '出版日期',
-  PUBLISHING_HOUSE: '出版社',
-  WRITER: '作者',
-  ISBN: 'ISBN',
-  // game
-  GAME_TITLE: '游戏名称',
-  // drama
-  DRAMA_TITLE: '舞台剧名称',
-  // common
-  RATING: '个人评分', // common
-  RATING_DATE: '打分日期', // common
-  COMMENTS: '我的短评', // common
-  ITEM_LINK: '条目链接', // common
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const customColsFile = process.env.CUSTOM_COLUMN_NAME;
+
+export const getColumnNames = async () => {
+  const base = {
+    NAME: 'name', // 用于log
+    // movie
+    POSTER: '海报',
+    MOVIE_TITLE: '电影/电视剧/番组',
+    YEAR: '上映年份',
+    DIRECTORS: '导演',
+    ACTORS: '主演',
+    GENRE: '类型', // movie, game, drama
+    IMDB_LINK: 'IMDb 链接',
+    // music
+    COVER: '封面', // music, book, game
+    MUSIC_TITLE: '单曲/专辑',
+    RELEASE_DATE: '发行日期', // music and game
+    MUSICIAN: '音乐家',
+    // book
+    BOOK_TITLE: '书名',
+    PUBLICATION_DATE: '出版日期',
+    PUBLISHING_HOUSE: '出版社',
+    WRITER: '作者',
+    ISBN: 'ISBN',
+    // game
+    GAME_TITLE: '游戏名称',
+    // drama
+    DRAMA_TITLE: '舞台剧名称',
+    // common
+    RATING: '个人评分', // common
+    RATING_DATE: '打分日期', // common
+    COMMENTS: '我的短评', // common
+    ITEM_LINK: '条目链接', // common
+  };
+  if (customColsFile) {
+    try {
+      const customCols = await import(customColsFile, {
+        assert: { type: 'json' },
+      });
+      if (customCols) {
+        return { ...base, ...customCols };
+      }
+    } catch (error) {
+      console.log('Failed to load custom columns setting: ', error);
+    }
+  }
+  return base;
 };
 
 export const PropertyType = {
@@ -56,5 +77,5 @@ export const PropertyType = {
 };
 
 export function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
+  return new Promise((r) => setTimeout(r, ms));
 }

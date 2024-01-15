@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import got from 'got';
 import { JSDOM } from 'jsdom';
 import Parser from 'rss-parser';
-import { DB_PROPERTIES, PropertyType, sleep } from './util.js';
+import { getColumnNames, PropertyType, sleep } from './util.js';
 
 dotenv.config();
 const parser = new Parser();
@@ -52,8 +52,11 @@ const bookDBID = process.env.NOTION_BOOK_DATABASE_ID;
 const gameDBID = process.env.NOTION_GAME_DATABASE_ID;
 const dramaDBID = process.env.NOTION_DRAMA_DATABASE_ID;
 const neodbToken = process.env.NEODB_API_TOKEN;
+let DB_PROPERTIES;;
 
 async function main() {
+  DB_PROPERTIES = await getColumnNames();
+
   console.log('Refreshing feeds from RSS...');
   let feeds;
   try {
