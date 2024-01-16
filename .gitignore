@@ -37,6 +37,5 @@ test.*
 # tmp file
 tmp*
 
-# douban notes and assets folder
-douban-notes-*
+# assets folder
 assets

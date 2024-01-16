@@ -13,7 +13,7 @@ import { Client, LogLevel } from '@notionhq/client';
 import dayjs from 'dayjs';
 import got from 'got';
 import { JSDOM } from 'jsdom';
-import { DB_PROPERTIES, sleep } from './util.js';
+import { DB_PROPERTIES, sleep } from '../util.js';
 
 dotenv.config();
 
