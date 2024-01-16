@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { promisify } from 'node:util';
 import download from 'image-downloader';
-import { sleep } from './util';
+import { sleep } from '../util';
 // const pinyin = require("pinyin"); // no need to convert Chinese titles now
 
 const writeFile = promisify(fs.writeFile);
