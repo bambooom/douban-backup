@@ -1,23 +1,37 @@
 {
   "name": "douban-backup",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "script to handle douban backup",
   "exports": "./index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "sync": "tsx src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bambooom/douban-backup.git"
   },
   "keywords": [
     "douban",
     "notion",
+    "neodb",
     "backup",
     "csv",
-    "rss"
+    "rss",
+    "userscript"
   ],
-  "type": "module",
   "author": "zhuzi <nmz89825@gmail.com>",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bambooom/douban-backup/issues"
+  },
+  "homepage": "https://github.com/bambooom/douban-backup#readme",
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.6",
+    "tsx": "^4.7.0"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.14",
@@ -27,8 +41,5 @@
     "got": "^14.0.0",
     "jsdom": "^23.2.0",
     "rss-parser": "^3.13.0"
-  },
-  "devDependencies": {
-    "image-downloader": "^4.3.0"
   }
 }
