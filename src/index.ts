@@ -1,5 +1,4 @@
-import fetchRSSFeeds from './fetch-rss';
-import handleRSSFeeds from './handle-rss';
+import { fetchRSSFeeds, handleRSSFeeds } from './handle-rss';
 import handleNotion from './handle-notion';
 import handleNeodb from './handle-neodb';
 import { ItemStatus } from './types';
