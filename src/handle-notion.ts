@@ -3,12 +3,11 @@ import dotenv from 'dotenv';
 import { Client } from '@notionhq/client';
 import { type CreatePageParameters } from '@notionhq/client/build/src/api-endpoints';
 import scrapyDouban from './handle-douban';
-import { getDBID, sleep } from './utils';
+import { getDBID, sleep, buildPropertyValue } from './utils';
 import { PropertyTypeMap, EMOJI } from './const';
 import DB_PROPERTIES from '../cols.json';
 import {
   ItemCategory,
-  NotionPropTypesEnum,
   type FeedItem,
   type NotionUrlPropType,
   type DB_PROPERTIES_KEYS,
@@ -171,7 +170,7 @@ async function addItemToNotion(itemData: {
     keys.shift(); // remove fist one NAME
     keys.forEach((key) => {
       if (itemData[DB_PROPERTIES[key]]) {
-        properties[DB_PROPERTIES[key]] = getPropertyValye(
+        properties[DB_PROPERTIES[key]] = buildPropertyValue(
           itemData[DB_PROPERTIES[key]],
           PropertyTypeMap[key],
           DB_PROPERTIES[key]
@@ -234,86 +233,5 @@ async function addItemToNotion(itemData: {
       error
     );
     return false;
-  }
-}
-
-/**
- * Generates the value for a property based on the given parameters, ready to insert
- * into notion database.
- *
- * @param {any} value - the value to be processed
- * @param {NotionPropTypesEnum} type - the type of the Notion database property
- * @param {string} key - the key associated with the property
- * @return {any} the generated value for the property later will be sent to notion to create an item
- */
-function getPropertyValye(value: any, type: NotionPropTypesEnum, key: string): Record<string, any> | undefined {
-  switch (type) {
-    case NotionPropTypesEnum.TITLE:
-      return {
-        type: NotionPropTypesEnum.TITLE,
-        title: [
-          {
-            text: {
-              content: value,
-            },
-          },
-        ],
-      };
-    case NotionPropTypesEnum.FILES:
-      return {
-        type: NotionPropTypesEnum.FILES,
-        files: [
-          {
-            name: value,
-            type: 'external',
-            external: {
-              url: value
-            },
-          },
-        ],
-      };
-    case NotionPropTypesEnum.DATE:
-      return {
-        type: NotionPropTypesEnum.DATE,
-        date: {
-          start: value,
-        },
-      };
-    case NotionPropTypesEnum.MULTI_SELECT:
-      return key === DB_PROPERTIES.RATING
-        ? {
-          type: NotionPropTypesEnum.MULTI_SELECT,
-          multi_select: value
-            ? [{ name: value.toString() }]
-            : [],
-        }
-        : {
-          type: NotionPropTypesEnum.MULTI_SELECT,
-          multi_select: (value || []).map(g => ({ name: g })),
-        };
-    case NotionPropTypesEnum.RICH_TEXT:
-      return {
-        type: NotionPropTypesEnum.RICH_TEXT,
-        rich_text: [
-          {
-            type: 'text',
-            text: {
-              content: value || '',
-            },
-          },
-        ],
-      };
-    case NotionPropTypesEnum.NUMBER:
-      return {
-        type: NotionPropTypesEnum.NUMBER,
-        number: value ? Number(value) : null,
-      };
-    case NotionPropTypesEnum.URL:
-      return {
-        type: NotionPropTypesEnum.URL,
-        url: value,
-      };
-    default:
-      break;
   }
 }

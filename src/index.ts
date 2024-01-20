@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import fetchRSSFeeds from './fetch-rss';
-import handleFeeds from './handle-feeds';
+import handleRSSFeeds from './handle-rss';
 import handleNotion from './handle-notion';
 import { ItemStatus } from './types';
 
@@ -16,7 +16,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const normalizedFeeds = handleFeeds(feeds);
+  const normalizedFeeds = handleRSSFeeds(feeds);
   const completeFeeds = normalizedFeeds.filter(f => f.status === ItemStatus.Complete);
 
   if (completeFeeds.length) {

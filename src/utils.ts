@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
-import { ItemCategory } from './types';
+import { ItemCategory, NotionPropTypesEnum } from './types';
+import DB_PROPERTIES from '../cols.json';
 
 dotenv.config();
 
@@ -28,4 +29,85 @@ export function getDBID(category: ItemCategory): string {
  */
 export function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * Generates the value for a property based on the given parameters, ready to insert
+ * into notion database.
+ *
+ * @param {any} value - the value to be processed
+ * @param {NotionPropTypesEnum} type - the type of the Notion database property
+ * @param {string} key - the key associated with the property
+ * @return {any} the generated value for the property later will be sent to notion to create an item
+ */
+export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: string): Record<string, any> | undefined {
+  switch (type) {
+    case NotionPropTypesEnum.TITLE:
+      return {
+        type: NotionPropTypesEnum.TITLE,
+        title: [
+          {
+            text: {
+              content: value,
+            },
+          },
+        ],
+      };
+    case NotionPropTypesEnum.FILES:
+      return {
+        type: NotionPropTypesEnum.FILES,
+        files: [
+          {
+            name: value,
+            type: 'external',
+            external: {
+              url: value
+            },
+          },
+        ],
+      };
+    case NotionPropTypesEnum.DATE:
+      return {
+        type: NotionPropTypesEnum.DATE,
+        date: {
+          start: value,
+        },
+      };
+    case NotionPropTypesEnum.MULTI_SELECT:
+      return key === DB_PROPERTIES.RATING
+        ? {
+          type: NotionPropTypesEnum.MULTI_SELECT,
+          multi_select: value
+            ? [{ name: value.toString() }]
+            : [],
+        }
+        : {
+          type: NotionPropTypesEnum.MULTI_SELECT,
+          multi_select: (value || []).map(g => ({ name: g })),
+        };
+    case NotionPropTypesEnum.RICH_TEXT:
+      return {
+        type: NotionPropTypesEnum.RICH_TEXT,
+        rich_text: [
+          {
+            type: 'text',
+            text: {
+              content: value || '',
+            },
+          },
+        ],
+      };
+    case NotionPropTypesEnum.NUMBER:
+      return {
+        type: NotionPropTypesEnum.NUMBER,
+        number: value ? Number(value) : null,
+      };
+    case NotionPropTypesEnum.URL:
+      return {
+        type: NotionPropTypesEnum.URL,
+        url: value,
+      };
+    default:
+      break;
+  }
 }
