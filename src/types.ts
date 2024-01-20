@@ -1,6 +1,8 @@
 import Parser from 'rss-parser';
 import DB_PROPERTIES from '../cols.json';
 
+export type DB_PROPERTIES_KEYS = Exclude<keyof typeof DB_PROPERTIES, "NAME">;
+
 export enum ItemCategory {
   Movie = 'movie',
   Music = 'music',
@@ -30,9 +32,19 @@ export type FeedItem = {
   category: ItemCategory;
 };
 
+export enum NotionPropTypesEnum {
+  TITLE = 'title',
+  RICH_TEXT = 'rich_text',
+  FILES = 'files',
+  DATE = 'date',
+  MULTI_SELECT = 'multi_select',
+  NUMBER = 'number',
+  URL = 'url',
+};
+
 export type NotionRichTextPropType = {
   id?: string;
-  type: 'rich_text';
+  type: NotionPropTypesEnum.RICH_TEXT;
   rich_text: {
     type: 'text';
     text: {
@@ -43,7 +55,7 @@ export type NotionRichTextPropType = {
 
 export type NotionTitlePropType = {
   id?: 'title';
-  type: 'title';
+  type: NotionPropTypesEnum.TITLE;
   title: {
     text: {
       content: string;
@@ -53,7 +65,7 @@ export type NotionTitlePropType = {
 
 export type NotionFilesPropType = {
   id?: string;
-  type: 'files';
+  type: NotionPropTypesEnum.FILES;
   files: {
     name: string;
     type: 'external';
@@ -65,7 +77,7 @@ export type NotionFilesPropType = {
 
 export type NotionDatePropType = {
   id?: string;
-  type: 'date';
+  type: NotionPropTypesEnum.DATE;
   date: {
     start: string;
     end: string | null;
@@ -75,7 +87,7 @@ export type NotionDatePropType = {
 
 export type NotionMultiSelectPropType = {
   id?: string;
-  type: 'multi_select';
+  type: NotionPropTypesEnum.MULTI_SELECT;
   multi_select: {
     name: string;
   }[];
@@ -83,12 +95,17 @@ export type NotionMultiSelectPropType = {
 
 export type NotionNumberPropType = {
   id?: string;
-  type: 'number';
+  type: NotionPropTypesEnum.NUMBER;
   number: number | null;
 };
 
 export type NotionUrlPropType = {
   id?: string;
-  type: 'url';
+  type: NotionPropTypesEnum.URL;
   url: string;
+};
+
+export type FailedItem = {
+  link: string;
+  title: string;
 };

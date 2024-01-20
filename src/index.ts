@@ -2,8 +2,7 @@ import dotenv from 'dotenv';
 import fetchRSSFeeds from './fetch-rss';
 import handleFeeds from './handle-feeds';
 import handleNotion from './handle-notion';
-import { type ItemCategory, ItemStatus } from './types';
-import { getDBID } from './utils';
+import { ItemStatus } from './types';
 
 dotenv.config();
 
@@ -19,7 +18,6 @@ async function main(): Promise<void> {
 
   const normalizedFeeds = handleFeeds(feeds);
   const completeFeeds = normalizedFeeds.filter(f => f.status === ItemStatus.Complete);
-
 
   if (completeFeeds.length) {
     await handleNotion(completeFeeds);
