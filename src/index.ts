@@ -1,13 +1,8 @@
-import dotenv from 'dotenv';
 import fetchRSSFeeds from './fetch-rss';
 import handleRSSFeeds from './handle-rss';
 import handleNotion from './handle-notion';
+import handleNeodb from './handle-neodb';
 import { ItemStatus } from './types';
-
-dotenv.config();
-
-const neodbToken = process.env.NEODB_API_TOKEN;
-
 
 async function main(): Promise<void> {
   const feeds = await fetchRSSFeeds();
@@ -22,6 +17,8 @@ async function main(): Promise<void> {
   if (completeFeeds.length) {
     await handleNotion(completeFeeds);
   }
+
+  await handleNeodb(normalizedFeeds);
 }
 
 main();
