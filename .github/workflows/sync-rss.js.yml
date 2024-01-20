@@ -29,7 +29,6 @@ jobs:
       NOTION_DRAMA_DATABASE_ID: ${{ secrets.NOTION_DRAMA_DATABASE_ID }}
       DOUBAN_USER_ID: ${{ secrets.DOUBAN_USER_ID }}
       NEODB_API_TOKEN: ${{ secrets.NEODB_API_TOKEN }}
-      CUSTOM_COLUMN_NAME: ${{ secrets.CUSTOM_COLUMN_NAME }}
 
     steps:
     - uses: actions/checkout@v3
@@ -38,4 +37,4 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
-    - run: node sync-rss.js || exit 1
+    - run: npm run sync || exit 1

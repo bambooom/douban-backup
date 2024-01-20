@@ -1,3 +1,5 @@
+# 正在更新新版，教程也需要更新
+
 ![sync-rss](https://github.com/bambooom/douban-backup/actions/workflows/sync-rss.js.yml/badge.svg)
 
 > 详细教程 -> https://zhuzi.dev/posts/2021-06-05-douban-backup-sync-notion/
