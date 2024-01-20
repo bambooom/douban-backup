@@ -1,6 +1,20 @@
+import Parser from 'rss-parser';
+import dotenv from 'dotenv';
 import { JSDOM } from 'jsdom';
-import { ALL_STATUS, RATING_TEXT } from './const';
-import { ItemCategory, ItemStatus, type RSSFeedItem, type FeedItem } from './types';
+import {
+  ALL_STATUS,
+  RATING_TEXT,
+  SeeState,
+  ReadState,
+  PlayState,
+  ListenState,
+} from './const';
+import {
+  ItemCategory,
+  ItemStatus,
+  type RSSFeedItem,
+  type FeedItem,
+} from './types';
 
 type ItemInfo = {
   category: ItemCategory;
@@ -8,29 +22,21 @@ type ItemInfo = {
   status: ItemStatus;
 }
 
-const SeeState = {
-  '看过': ItemStatus.Complete,
-  '在看': ItemStatus.Progress,
-  '想看': ItemStatus.Wishlist,
-};
+dotenv.config();
 
-const ReadState = {
-  '读过': ItemStatus.Complete,
-  '在读': ItemStatus.Progress,
-  '想读': ItemStatus.Wishlist,
-};
-
-const PlayState = {
-  '玩过': ItemStatus.Complete,
-  '在玩': ItemStatus.Progress,
-  '想玩': ItemStatus.Wishlist,
-};
-
-const ListenState = {
-  '听过': ItemStatus.Complete,
-  '在听': ItemStatus.Progress,
-  '想听': ItemStatus.Wishlist,
-};
+export async function fetchRSSFeeds(): Promise<RSSFeedItem[]> {
+  const DOUBAN_USER_ID = process.env.DOUBAN_USER_ID;
+  const parser = new Parser();
+  try {
+    const feeds = await parser.parseURL(
+      `https://www.douban.com/feed/people/${DOUBAN_USER_ID}/interests`
+    );
+    return feeds.items;
+  } catch (error) {
+    console.error('Failed to parse RSS url: ', error);
+    process.exit(1);
+  }
+}
 
 /**
  * Normalize the given array of RSS feed items.
@@ -38,7 +44,7 @@ const ListenState = {
  * @param {RSSFeedItem[]} feeds - The array of RSS feed items to be normalized.
  * @return {FeedItem[]} The normalized array of feed items.
  */
-export default function handleRSSFeeds(feeds: RSSFeedItem[]): FeedItem[] {
+export function handleRSSFeeds(feeds: RSSFeedItem[]): FeedItem[] {
   const normalizedFeeds: FeedItem[] = [];
 
   feeds.forEach((item) => {

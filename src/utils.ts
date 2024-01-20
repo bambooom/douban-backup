@@ -1,6 +1,17 @@
 import dotenv from 'dotenv';
-import { ItemCategory, NotionPropTypesEnum } from './types';
 import DB_PROPERTIES from '../cols.json';
+import {
+  ItemCategory,
+  NotionPropTypesEnum,
+  type NotionRichTextPropType,
+  type NotionTitlePropType,
+  type NotionFilesPropType,
+  type NotionDatePropType,
+  type NotionMultiSelectPropType,
+  type NotionNumberPropType,
+  type NotionUrlPropType,
+  type NotionColPropTypes,
+} from './types';
 
 dotenv.config();
 
@@ -40,7 +51,7 @@ export function sleep(ms: number): Promise<void> {
  * @param {string} key - the key associated with the property
  * @return {any} the generated value for the property later will be sent to notion to create an item
  */
-export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: string): Record<string, any> | undefined {
+export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: string): NotionColPropTypes | undefined {
   switch (type) {
     case NotionPropTypesEnum.TITLE:
       return {
@@ -52,7 +63,7 @@ export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: s
             },
           },
         ],
-      };
+      } as NotionTitlePropType;
     case NotionPropTypesEnum.FILES:
       return {
         type: NotionPropTypesEnum.FILES,
@@ -65,14 +76,14 @@ export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: s
             },
           },
         ],
-      };
+      } as NotionFilesPropType;
     case NotionPropTypesEnum.DATE:
       return {
         type: NotionPropTypesEnum.DATE,
         date: {
           start: value,
         },
-      };
+      } as NotionDatePropType;
     case NotionPropTypesEnum.MULTI_SELECT:
       return key === DB_PROPERTIES.RATING
         ? {
@@ -80,11 +91,11 @@ export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: s
           multi_select: value
             ? [{ name: value.toString() }]
             : [],
-        }
+        } as NotionMultiSelectPropType
         : {
           type: NotionPropTypesEnum.MULTI_SELECT,
           multi_select: (value || []).map(g => ({ name: g })),
-        };
+        } as NotionMultiSelectPropType;
     case NotionPropTypesEnum.RICH_TEXT:
       return {
         type: NotionPropTypesEnum.RICH_TEXT,
@@ -96,17 +107,17 @@ export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: s
             },
           },
         ],
-      };
+      } as NotionRichTextPropType;
     case NotionPropTypesEnum.NUMBER:
       return {
         type: NotionPropTypesEnum.NUMBER,
         number: value ? Number(value) : null,
-      };
+      } as NotionNumberPropType;
     case NotionPropTypesEnum.URL:
       return {
         type: NotionPropTypesEnum.URL,
         url: value,
-      };
+      } as NotionUrlPropType;
     default:
       break;
   }

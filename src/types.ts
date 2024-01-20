@@ -105,6 +105,15 @@ export type NotionUrlPropType = {
   url: string;
 };
 
+export type NotionColPropTypes =
+  | NotionRichTextPropType
+  | NotionTitlePropType
+  | NotionFilesPropType
+  | NotionDatePropType
+  | NotionMultiSelectPropType
+  | NotionNumberPropType
+  | NotionUrlPropType;
+
 export type FailedItem = {
   link: string;
   title: string;
