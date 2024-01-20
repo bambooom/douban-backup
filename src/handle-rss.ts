@@ -38,7 +38,7 @@ const ListenState = {
  * @param {RSSFeedItem[]} feeds - The array of RSS feed items to be normalized.
  * @return {FeedItem[]} The normalized array of feed items.
  */
-export default function handleFeeds(feeds: RSSFeedItem[]): FeedItem[] {
+export default function handleRSSFeeds(feeds: RSSFeedItem[]): FeedItem[] {
   const normalizedFeeds: FeedItem[] = [];
 
   feeds.forEach((item) => {
