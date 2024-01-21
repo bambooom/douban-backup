@@ -1,25 +1,25 @@
-# 正在更新新版，教程也需要更新
-
 ![sync-rss](https://github.com/bambooom/douban-backup/actions/workflows/sync-rss.js.yml/badge.svg)
 
 > 详细教程 -> https://zhuzi.dev/posts/2021-06-05-douban-backup-sync-notion/
 >
 > 油猴脚本 -> https://greasyfork.org/en/scripts/420999
 
-## update notion database from csv
 
-在前一次导出后过了一段时间，在豆瓣上又有新的标记，但没有简单方法可以同步，又不想手动添加。
-终于等到了 notion public API 发布出来。
+```
+.
+├── archive     # 不再使用的实验时的爬虫脚本
+├── cols.json   # 可修改自定义的 Notion 表格列名
+├── .env        # 如果需要在本地 debug，可以添加这个文件
+├── scripts     # 长期不需要使用的脚本，但未来有可能需要使用
+├── src         # 会保持更新正在使用的脚本👩🏻‍💻👈
+└── userscript  # 导出时可使用的油猴脚本
+```
 
-如果在豆瓣上又重新执行[油猴脚本（`export.user.js`）](https://greasyfork.org/en/scripts/420999)导出了一个更新的 csv 文件。
-其中大多数都已经在上一次导出到 notion database 中。少数（大约 80 个）新条目需要更新到 database 中。
 
-可以使用 `update-notion.js` 脚本，用最新的 csv 文件作为输入，跳过所有已经导入过的条目。
-针对新的条目，一一去从页面获取扩展信息，并更新到 notion 中。
-因为访问条目数比较少，所以不容易被禁 IP。
+## 从豆瓣 RSS 数据同步到 Notion 数据库
 
 <details>
-  <summary>example of one row of douban export.user.js csv data</summary>
+  <summary>使用油猴脚本 <code>export.user.js</code>导出的 CSV 数据样例（one row）</summary>
   <pre>
 {
   '标题': '无间双龙：这份爱，才是正义 / ウロボロス～この愛こそ正  義。',
@@ -34,7 +34,7 @@
 </details>
 
 <details>
-  <summary>example of notion database properties</summary>
+  <summary>Notion 数据库 properties 样例数据</summary>
   <pre>
 {
   '条目链接': {
@@ -81,16 +81,8 @@
   </pre>
 </details>
 
-
-
-## sync database from douban rss
-通过上面的脚本可以一次性处理添加几十个条目，但终究需要手动隔一段时间去执行。
-我想到的能够自动同步豆瓣标记的方法就是通过 RSS，所幸豆瓣的 RSS 功能一直健在。
-
-以下是 RSS 数据解析之后的例子：
-
 <details>
-  <summary>douban rss parsed example</summary>
+  <summary>豆瓣RSS 数据解析之后的例子</summary>
   <pre>
 #竹子哟竹子#✨ 的收藏
 {
@@ -127,30 +119,25 @@
   </pre>
 </details>
 
+---
+
 RSS 的好处一个是轻量，但又包含了个人标记的最重要的几个数据：名字、条目链接、时间、评分、短评。
 所以需求可以转换为，定时获取 RSS 更新，并对新的条目进行抓取信息并同步到 notion database。
 
-由此完成了 `sync-rss.js` 脚本工具，即获取 RSS 数据，对新加入的条目进行抓取信息，处理后添加到对应的 notion database 中即可。
+但需要注意的是，豆瓣的 RSS 数据每次都只保留 10 个，并且包括想看、想听、想读。本人的脚本同步到 Notion 的部分仅处理看过、听过、读过的条目，如果某一天集中标记数量过多，可能使 RSS 数据并未全部被 workflow 获取。
+这种情况的时候请自己手动触发脚本的运行，或者将脚本运行间隔时间改短，比如每个小时或者每两个小时。
 
-这个脚本只要能定时自己跑就可以自动从豆瓣标记去更新 notion 了！
-
-需要一个能跑 cron job 的服务即可，贫穷又很懒的我在想过一圈之后，发现 GitHub Actions 可以跑 [scheduled workflow](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#schedule), 完美满足需求。
-
-经过一番查找文档，设定好了 [sync-rss workflow](./.github/workflows/sync-rss.js.yml)。此处我的 schedule 是 "Runs every 6 hours"，也就是一天也只运行 4 次。
-
-但需要考虑的是，豆瓣的 RSS 数据每次都只保留 10 个，并且包括想看、想听、想读。本人仅处理看过、听过、读过的条目，所以如果某一天集中标记数量过多，可能使 RSS 数据并未全部被 workflow 获取。
-也在考虑改成 每小时或者每两个小时跑一次。
-
-另，GitHub 免费用户的开源仓库，actions 暂时是完全免费，也不计时间。
+GitHub 免费用户的开源仓库，actions 暂时是完全免费，也不计时间。
 
 [查看 workflow 运行结果 ->](https://github.com/bambooom/douban-backup/actions/workflows/sync-rss.js.yml)
 
-## sync to NeoDB
+## 同时同步标记到 NeoDB
 
 > [NeoDB 文档](https://neodb.social/developer/)
 
 在文档页面先生成一个 Token，然后给 repo 添加一个 secret 叫 `NEODB_API_TOKEN`。
 即可开启在豆瓣的标记会同步到 NeoDB 的功能。
+
 
 ## todo
 - [x] ~~补全 notion 中的海报~~
