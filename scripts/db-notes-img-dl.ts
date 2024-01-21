@@ -1,8 +1,12 @@
+/*
+ * Use to download images from exported 豆瓣日记 md files
+*/
+
 import fs from "node:fs";
 import path from "node:path";
 import { promisify } from 'node:util';
 import download from 'image-downloader';
-import { sleep } from '../util';
+import { sleep } from '../src/utils';
 // const pinyin = require("pinyin"); // no need to convert Chinese titles now
 
 const writeFile = promisify(fs.writeFile);
@@ -17,15 +21,13 @@ const IMG_PREFIX = '/assets/images/'; // for my blog setting
 
 (async () => {
   const notesFiles = await readDir(DIR);
-  let COUNT = 0, FAILED_URLS = [];
+  let COUNT = 0, FAILED_URLS: string[] = [];
   for (const notesFile of notesFiles) {
     let basename = path.basename(notesFile); // 2020-07-08-filename.md
-    basename = basename.match(/^\d{4}-\d{2}-\d{2}-(.+)\.md$/);
-    basename = basename[1]; // filename, no .md
-    basename = basename.replace(/\s/g, '-'); // `filename`, use as image folder name
+    basename = basename.match(/^\d{4}-\d{2}-\d{2}-(.+)\.md$/)?.[1].replace(/\s/g, '-')!; // filename, no .md, use as image folder name
 
     let file = await readFile(path.resolve(__dirname, `${DIR}/${notesFile}`), 'utf8');
-    let imgs = [];
+    let imgs: string[] = [];
     file = file.replace(/!\[(.*?)\]\((.+?)\)/g, function (whole, desc, url) {
       imgs.push(url);
       let name = url.match(/\/([^/]*\.(?:jpg|webp))$/); // last p12344.jpg

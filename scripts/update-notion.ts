@@ -10,24 +10,27 @@ import fs from 'node:fs';
 import dotenv from 'dotenv';
 import csv from 'fast-csv';
 import { Client, LogLevel } from '@notionhq/client';
+import type { QueryDatabaseResponse, PageObjectResponse, CreatePageBodyParameters } from '@notionhq/client/build/src/api-endpoints';
 import dayjs from 'dayjs';
 import got from 'got';
 import { JSDOM } from 'jsdom';
-import { DB_PROPERTIES, sleep } from '../util.js';
+import { sleep } from '../src/utils';
+import DB_PROPERTIES from '../cols.json';
+import type { NotionDatePropType } from '../src/types';
 
 dotenv.config();
 
 // Initializing a client
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
-  // logLevel: LogLevel.DEBUG,
+  logLevel: LogLevel.DEBUG,
 });
 
 // example: https://github.com/makenotion/notion-sdk-js/blob/main/examples/database-update-send-email/index.js
 
-const databaseId = process.env.NOTION_MOVIE_DATABASE_ID;
+const databaseId = process.env.NOTION_MOVIE_DATABASE_ID as string;
 // read csv file to csvData, and these are going to be filled in notion database
-let csvData = [];
+const csvData: Record<string, any>[] = [];
 
 async function main() {
   // get input csv file from cli arg
@@ -46,7 +49,7 @@ async function main() {
   }
 
   // query current db last inserted item
-  const lastMovieItem = await notion.databases.query({
+  const lastMovieItem: QueryDatabaseResponse = await notion.databases.query({
     database_id: databaseId,
     sorts: [
       {
@@ -60,14 +63,14 @@ async function main() {
   // console.log(lastMovieItem.results[0].properties[DB_PROPERTIES.GENRE]);
 
   // get the last inserted item's date
-  const lastDate = lastMovieItem.results[0].properties[DB_PROPERTIES.RATING_DATE].date.start; // '2021-01-19'
+  const lastDate = ((lastMovieItem.results[0] as PageObjectResponse).properties[DB_PROPERTIES.RATING_DATE] as NotionDatePropType).date.start; // '2021-01-19'
 
   let skip = false;
   const rs = fs.createReadStream(inputFile);
   rs
     .pipe(csv.parse({ headers: true, discardUnmappedColumns: true, trim: true }))
     .on('error', error => console.error(error))
-    .on('data', row => {
+    .on('data', (row: Record<string, any>) => {
       if (Number(skipMode)) {
         if (skip) { return; }
         row[DB_PROPERTIES.RATING_DATE] = row[DB_PROPERTIES.RATING_DATE].replace(/\//g, '-');
@@ -89,7 +92,7 @@ async function main() {
 }
 
 async function handleNewItems() {
-  csvData = csvData.reverse();
+  csvData.reverse();
   for (let i = 0; i < csvData.length; i++) {
     const row = csvData[i]; // reverse the array
     const link = row[DB_PROPERTIES.ITEM_LINK];
@@ -101,7 +104,7 @@ async function handleNewItems() {
       itemData = {...itemData, ...row}; // merge all data
 
     } catch (error) {
-      console.error(row[DB_PROPERTIES.TITLE], error);
+      console.error(row[DB_PROPERTIES.MOVIE_TITLE], error);
     }
 
     if (itemData) {
@@ -116,20 +119,20 @@ async function fetchItem(link) {
   const itemData = {};
   const response = await got(link);
   const dom = new JSDOM(response.body);
-  itemData[DB_PROPERTIES.YEAR] = dom.window.document.querySelector('#content h1 .year').textContent.slice(1, -1);
-  itemData[DB_PROPERTIES.POSTER] = dom.window.document.querySelector('#mainpic img').src.replace(/\.webp$/, '.jpg');
-  itemData[DB_PROPERTIES.DIRECTORS] = dom.window.document.querySelector('#info .attrs').textContent;
+  itemData[DB_PROPERTIES.YEAR] = dom.window.document.querySelector('#content h1 .year')?.textContent?.slice(1, -1);
+  itemData[DB_PROPERTIES.POSTER] = (dom.window.document.querySelector('#mainpic img') as HTMLImageElement).src.replace(/\.webp$/, '.jpg');
+  itemData[DB_PROPERTIES.DIRECTORS] = dom.window.document.querySelector('#info .attrs')?.textContent;
   itemData[DB_PROPERTIES.ACTORS] = [...dom.window.document.querySelectorAll('#info .actor .attrs a')].slice(0, 5).map(i => i.textContent).join(' / ');
   itemData[DB_PROPERTIES.GENRE] = [...dom.window.document.querySelectorAll('#info [property="v:genre"]')].map(i => i.textContent); // array
-  const imdbInfo = [...dom.window.document.querySelectorAll('#info span.pl')].filter(i => i.textContent.startsWith('IMDb'));
+  const imdbInfo = [...dom.window.document.querySelectorAll('#info span.pl')].filter(i => i.textContent?.startsWith('IMDb'));
   if (imdbInfo.length) {
-    itemData[DB_PROPERTIES.IMDB_LINK] = 'https://www.imdb.com/title/' + imdbInfo[0].nextSibling.textContent.trim();
+    itemData[DB_PROPERTIES.IMDB_LINK] = 'https://www.imdb.com/title/' + imdbInfo[0].nextSibling?.textContent?.trim();
   }
   return itemData;
 }
 
 async function addToNotion(itemData) {
-  console.log('goint to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.TITLE]);
+  console.log('goint to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.MOVIE_TITLE]);
   try {
     const response = await notion.pages.create({
       parent: {
@@ -144,11 +147,11 @@ async function addToNotion(itemData) {
             }
           ],
         },
-        [DB_PROPERTIES.TITLE]: {
+        [DB_PROPERTIES.MOVIE_TITLE]: {
           title: [
             {
               text: {
-                content: itemData[DB_PROPERTIES.TITLE],
+                content: itemData[DB_PROPERTIES.MOVIE_TITLE],
               },
             },
           ]
@@ -209,13 +212,13 @@ async function addToNotion(itemData) {
         [DB_PROPERTIES.IMDB_LINK]: {
           url: itemData[DB_PROPERTIES.IMDB_LINK] || null,
         },
-      },
+      } as CreatePageBodyParameters,
     });
     if (response && response.id) {
-      console.log(itemData[DB_PROPERTIES.TITLE] + `(${itemData[DB_PROPERTIES.ITEM_LINK]})` + ' page created.');
+      console.log(itemData[DB_PROPERTIES.MOVIE_TITLE] + `(${itemData[DB_PROPERTIES.ITEM_LINK]})` + ' page created.');
     }
   } catch (error) {
-    console.warn('Failed to create ' + itemData[DB_PROPERTIES.TITLE] + `(${itemData[DB_PROPERTIES.ITEM_LINK]})` + ' with error: ', error);
+    console.warn('Failed to create ' + itemData[DB_PROPERTIES.MOVIE_TITLE] + `(${itemData[DB_PROPERTIES.ITEM_LINK]})` + ' with error: ', error);
   }
 }
 
