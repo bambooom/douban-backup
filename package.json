@@ -37,7 +37,7 @@
     "@notionhq/client": "^2.2.14",
     "dayjs": "^1.11.10",
     "dotenv": "^16.4.4",
-    "fast-csv": "^5.0.0",
+    "fast-csv": "^5.0.1",
     "got": "^14.2.0",
     "jsdom": "^24.0.0",
     "rss-parser": "^3.13.0"
