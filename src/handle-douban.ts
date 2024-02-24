@@ -88,7 +88,7 @@ function buildBookItem(doc: Document) {
   const cover = img?.title !== ImgDefaultTitle.Cover && img?.src.length <= 100 ? img?.src.replace(/\.webp$/, '.jpg') : '';
   const info = [...doc.querySelectorAll(InfoSelector)];
 
-  let writer = '', publisher = '', bookTitle = '', publishDate = '', isbn = 0;
+  let writer = '', publisher = '', bookTitle = title, publishDate = '', isbn = 0;
   info.forEach(i => {
     const text = i.textContent?.trim() || '';
     let nextText = i.nextSibling?.textContent?.trim() || '';
@@ -121,7 +121,6 @@ function buildBookItem(doc: Document) {
   });
 
   return {
-    [DB_PROPERTIES.BOOK_TITLE]: title,
     [DB_PROPERTIES.NAME]: title,
     [DB_PROPERTIES.COVER]: cover, // optional
     [DB_PROPERTIES.WRITER]: writer, // optional
