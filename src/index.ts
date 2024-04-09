@@ -1,3 +1,4 @@
+import { consola } from 'consola';
 import { fetchRSSFeeds, handleRSSFeeds } from './handle-rss';
 import handleNotion from './handle-notion';
 import handleNeodb from './handle-neodb';
@@ -6,7 +7,7 @@ import { ItemStatus } from './types';
 async function main(): Promise<void> {
   const feeds = await fetchRSSFeeds();
   if (feeds.length === 0) {
-    console.log('No new items.');
+    consola.info('No new items.');
     return;
   }
 

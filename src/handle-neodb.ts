@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import got from 'got';
+import { consola } from 'consola';
 import type { FeedItem, ItemCategory } from "./types";
 import { sleep } from './utils';
 
@@ -36,12 +37,12 @@ export default async function handleNeodb(feeds: FeedItem[]): Promise<void> {
     return;
   }
 
-  console.log('Going to sync to NeoDB...');
+  consola.start('Going to sync to NeoDB...');
   // 同步标记到 neodb
   for (const item of feeds) {
     await insertToNeodb(item);
   }
-  console.log('NeoDB synced ✨');
+  consola.success('NeoDB synced ✨');
 }
 
 /**
@@ -72,7 +73,7 @@ async function insertToNeodb(item: FeedItem): Promise<void> {
             accept: 'application/json',
           },
         }
-      ).json();
+      ).json() as any;
       if (mark.shelf_type !== item.status) {
         // 标记状态不一样，所以更新标记
         await markItem(neodbItem, item);
@@ -98,7 +99,7 @@ async function insertToNeodb(item: FeedItem): Promise<void> {
  * @return {Promise<void>} a Promise that resolves when the item is successfully marked
  */
 async function markItem(neodbItem: NeodbItem, item: FeedItem): Promise<void> {
-  console.log('Going to mark on NeoDB: ', `${neodbItem.title}[${item.link}]`);
+  consola.info('Going to mark on NeoDB: ', `${neodbItem.title}[${item.link}]`);
   try {
     await got.post(`https://neodb.social/api/me/shelf/item/${neodbItem.uuid}`, {
       headers: {
@@ -115,7 +116,7 @@ async function markItem(neodbItem: NeodbItem, item: FeedItem): Promise<void> {
       },
     });
   } catch (error) {
-    console.error(
+    consola.error(
       'Failed to mark item: ', neodbItem?.title,
         ' with error: ',
       error

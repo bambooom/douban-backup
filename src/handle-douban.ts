@@ -1,6 +1,7 @@
 import got from 'got';
 import { JSDOM } from 'jsdom';
 import dayjs from 'dayjs';
+import { consola } from 'consola';
 import { ItemCategory } from './types';
 import DB_PROPERTIES from '../cols.json';
 
@@ -14,7 +15,7 @@ const InfoSelector = '#info span.pl';
 export default async function scrapyDouban(link: string, category: ItemCategory): Promise<{
     [key: string]: string | string[] | number | null | undefined;
 }> {
-  console.log(`Scraping ${category} item with link: ${link}`);
+  consola.start(`Scraping ${category} item with link: ${link}`);
   const response = await got(link);
   const dom = new JSDOM(response.body);
   const doc = dom.window.document;

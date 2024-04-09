@@ -1,6 +1,7 @@
 import Parser from 'rss-parser';
 import dotenv from 'dotenv';
 import { JSDOM } from 'jsdom';
+import { consola } from 'consola';
 import {
   ALL_STATUS,
   RATING_TEXT,
@@ -33,7 +34,7 @@ export async function fetchRSSFeeds(): Promise<RSSFeedItem[]> {
     );
     return feeds.items;
   } catch (error) {
-    console.error('Failed to parse RSS url: ', error);
+    consola.error('Failed to parse RSS url: ', error);
     process.exit(1);
   }
 }

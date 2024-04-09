@@ -1,3 +1,4 @@
+import { consola } from 'consola';
 import dayjs from 'dayjs';
 import dotenv from 'dotenv';
 import { Client } from '@notionhq/client';
@@ -54,15 +55,15 @@ export default async function handleNotion(feeds: FeedItem[]): Promise<void> {
         AllFailedItems.push(...failed);
       }
     } catch (error) {
-      console.error(`Failed to handle ${category} feeds. `, error);
+      consola.error(`Failed to handle ${category} feeds. `, error);
       process.exit(1);
     }
   }
 
   if (AllFailedItems.length) {
-    console.log('Failed to handle the following feeds to insert into Notion:');
+    consola.warn('Failed to handle the following feeds to insert into Notion:');
     for (const item of AllFailedItems) {
-      console.log(`${item.title}: ${item.link}`);
+      consola.warn(`${item.title}: ${item.link}`);
     }
     process.exit(1);
   }
@@ -77,17 +78,17 @@ export default async function handleNotion(feeds: FeedItem[]): Promise<void> {
  */
 async function syncNotionDB(categorizedFeeds: FeedItem[], category: ItemCategory): Promise<FailedItem[] | undefined> {
   if (categorizedFeeds.length === 0) {
-    console.log(`No new ${category} feeds.`);
+    consola.info(`No new ${category} feeds.`);
     return;
   }
 
   const dbID = getDBID(category);
   if (!dbID) {
-    console.log(`No notion database id for ${category}`);
+    consola.warn(`No notion database id for ${category}`);
     return;
   }
 
-  console.log(`Handling ${category} feeds...`);
+  consola.start(`Handling ${category} feeds...`);
 
   const queryItems = await notion.databases.query({
     database_id: dbID,
@@ -100,7 +101,7 @@ async function syncNotionDB(categorizedFeeds: FeedItem[], category: ItemCategory
       })),
     },
   }).catch((error) => {
-    console.error(`Failed to query ${category} database to check already inserted items. `, error);
+    consola.error(`Failed to query ${category} database to check already inserted items. `, error);
     process.exit(1);
   });
 
@@ -115,7 +116,7 @@ async function syncNotionDB(categorizedFeeds: FeedItem[], category: ItemCategory
     return !alreadyInsertedItems.has(item.link);
   });
 
-  console.log(`There are total ${newFeeds.length} new ${category} item(s) need to insert.`);
+  consola.info(`There are total ${newFeeds.length} new ${category} item(s) need to insert.`);
 
   const failedItems: FailedItem[] = [];
 
@@ -136,16 +137,16 @@ async function syncNotionDB(categorizedFeeds: FeedItem[], category: ItemCategory
       await sleep(1000);
 
     } catch (error) {
-      console.error(error);
+      consola.error(error);
       continue;
     }
   }
 
   if (failedItems.length) {
-    console.log(`Failed to insert ${failedItems.length} items into ${category} Notion database.`);
+    consola.warn(`Failed to insert ${failedItems.length} items into ${category} Notion database.`);
   }
-  console.log(`${category} feeds done.`);
-  console.log('====================');
+  consola.success(`${category} feeds done.`);
+  consola.log('====================');
   return failedItems;
 }
 
