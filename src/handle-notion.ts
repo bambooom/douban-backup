@@ -143,7 +143,7 @@ async function syncNotionDB(categorizedFeeds: FeedItem[], category: ItemCategory
   }
 
   if (failedItems.length) {
-    consola.warn(`Failed to insert ${failedItems.length} items into ${category} Notion database.`);
+    consola.error(`Failed to insert ${failedItems.length} items into ${category} Notion database.`);
   }
   consola.success(`${category} feeds done.`);
   consola.log('====================');
@@ -160,7 +160,7 @@ async function syncNotionDB(categorizedFeeds: FeedItem[], category: ItemCategory
 async function addItemToNotion(itemData: {
     [key: string]: string | string[] | number | null | undefined;
 }, category: ItemCategory): Promise<boolean> {
-  console.log(
+  consola.start(
     'Going to insert ',
     itemData[DB_PROPERTIES.RATING_DATE],
     itemData[DB_PROPERTIES.NAME]
@@ -218,7 +218,7 @@ async function addItemToNotion(itemData: {
 
     const response = await notion.pages.create(postData);
     if (response && response.id) {
-      console.log(
+      consola.success(
         itemData[DB_PROPERTIES.NAME] +
           `[${itemData[DB_PROPERTIES.ITEM_LINK]}]` +
           ' page inserted into Notion database.'
@@ -226,7 +226,7 @@ async function addItemToNotion(itemData: {
     }
     return true;
   } catch (error) {
-    console.warn(
+    consola.error(
       'Failed to create ' +
         itemData[DB_PROPERTIES.NAME] +
         `(${itemData[DB_PROPERTIES.ITEM_LINK]})` +
