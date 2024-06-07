@@ -44,7 +44,7 @@ function buildMovieItem(doc: Document) {
 
   const infoPl = [...doc.querySelectorAll(InfoSelector)];
   const directorPl = infoPl.filter(i => i.textContent === '导演')
-  const directors = directorPl.length ? directorPl[0].nextElementSibling?.textContent?.trim() : '';
+  const directors = (directorPl.length ? directorPl[0] : infoPl[0]).nextElementSibling?.textContent?.trim() || '';
   const actorsPl = infoPl.filter(i => i.textContent === '主演')
   const actors = actorsPl.length
     ? [...actorsPl[0].nextElementSibling?.querySelectorAll('span a')!]
