@@ -41,9 +41,15 @@ function buildMovieItem(doc: Document) {
   const year = doc.querySelector('#content h1 .year')?.textContent?.slice(1, -1) || '';
   const img = doc.querySelector(ImgSelector) as HTMLImageElement;
   const poster = img?.title === ImgDefaultTitle.Poster ? img?.src?.trim().replace(/\.webp$/, '.jpg') : '';
-  const directors = doc.querySelector('#info .attrs')?.textContent || '';
-  const actors = [...doc.querySelectorAll('#info .actor .attrs a')]
-    .slice(0, 5).map(i => i.textContent).join(' / ');
+
+  const infoPl = [...doc.querySelectorAll(InfoSelector)];
+  const directorPl = infoPl.filter(i => i.textContent === '导演')
+  const directors = directorPl.length ? directorPl[0].nextElementSibling?.textContent?.trim() : '';
+  const actorsPl = infoPl.filter(i => i.textContent === '主演')
+  const actors = actorsPl.length
+    ? [...actorsPl[0].nextElementSibling?.querySelectorAll('span a')!]
+      .slice(0, 5).map(i => i.textContent).join(' / ')
+    : '';
   const genre = [...doc.querySelectorAll('#info [property="v:genre"]')].map(i => i.textContent || '').filter(v => v);
   const imdbInfo = [...doc.querySelectorAll(InfoSelector)].filter(i => i.textContent?.startsWith('IMDb'));
   const imdbLink = imdbInfo.length ? 'https://www.imdb.com/title/' + imdbInfo[0].nextSibling?.textContent?.trim() : '';
