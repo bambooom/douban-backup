@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import dotenv from 'dotenv';
 import csv from 'fast-csv';
 import { Client, LogLevel } from '@notionhq/client';
-import type { QueryDatabaseResponse, PageObjectResponse, CreatePageBodyParameters } from '@notionhq/client/build/src/api-endpoints';
+import type { QueryDatabaseResponse, PageObjectResponse, CreatePageParameters } from '@notionhq/client/build/src/api-endpoints';
 import dayjs from 'dayjs';
 import got from 'got';
 import { JSDOM } from 'jsdom';
@@ -101,7 +101,7 @@ async function handleNewItems() {
     let itemData;
     try {
       itemData = await fetchItem(link); // https://movie.douban.com/subject/1291552/
-      itemData = {...itemData, ...row}; // merge all data
+      itemData = { ...itemData, ...row }; // merge all data
 
     } catch (error) {
       console.error(row[DB_PROPERTIES.MOVIE_TITLE], error);
@@ -132,7 +132,7 @@ async function fetchItem(link) {
 }
 
 async function addToNotion(itemData) {
-  console.log('goint to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.MOVIE_TITLE]);
+  console.log('Going to insert ', itemData[DB_PROPERTIES.RATING_DATE], itemData[DB_PROPERTIES.MOVIE_TITLE]);
   try {
     const response = await notion.pages.create({
       parent: {
@@ -191,6 +191,16 @@ async function addToNotion(itemData) {
             },
           ],
         },
+        [DB_PROPERTIES.SCREENWRITERS]: {
+          'rich_text': [
+            {
+              type: 'text',
+              text: {
+                content: itemData[DB_PROPERTIES.SCREENWRITERS],
+              },
+            },
+          ],
+        },
         [DB_PROPERTIES.ACTORS]: {
           'rich_text': [
             {
@@ -212,8 +222,8 @@ async function addToNotion(itemData) {
         [DB_PROPERTIES.IMDB_LINK]: {
           url: itemData[DB_PROPERTIES.IMDB_LINK] || null,
         },
-      } as CreatePageBodyParameters,
-    });
+      },
+    } as CreatePageParameters);
     if (response && response.id) {
       console.log(itemData[DB_PROPERTIES.MOVIE_TITLE] + `(${itemData[DB_PROPERTIES.ITEM_LINK]})` + ' page created.');
     }
