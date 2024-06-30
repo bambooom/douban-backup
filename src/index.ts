@@ -18,7 +18,7 @@ async function main(): Promise<void> {
     await handleNotion(completeFeeds);
   }
 
-  // await handleNeodb(normalizedFeeds);
+  await handleNeodb(normalizedFeeds);
 }
 
 main();
