@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@notionhq/client": "^2.2.15",
-    "consola": "^3.3.1",
+    "consola": "^3.3.3",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.7",
     "fast-csv": "^5.0.2",
