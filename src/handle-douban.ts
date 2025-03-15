@@ -65,8 +65,8 @@ function buildMovieItem(doc: Document) {
     const imdbInfo = [...doc.querySelectorAll(InfoSelector)].filter(i => i.textContent?.startsWith('IMDb'));
     const imdbLink = imdbInfo.length ? 'https://www.imdb.com/title/' + imdbInfo[0].nextSibling?.textContent?.trim() : '';
     // 新增电视剧判断逻辑
-    const episodeCount = infoPl.find(i => i.textContent === '集数')?.nextSibling?.textContent?.trim();
-    const episodeRuntime = infoPl.find(i => i.textContent === '单集片长')?.nextSibling?.textContent?.trim();
+    const episodeCount = infoPl.filter(i => i.textContent.indexOf("集数") > -1)[0]?.nextSibling?.textContent?.trim();
+    const episodeRuntime = infoPl.filter(i => i.textContent.indexOf("单集片长") > -1)[0]?.nextSibling?.textContent?.trim();
     const isTVSeries = !!episodeCount || !!episodeRuntime;
     const synopsis = doc.querySelector('#link-report-intra span[property="v:summary"]')?.textContent?.trim() || '';
 
