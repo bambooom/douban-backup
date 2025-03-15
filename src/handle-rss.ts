@@ -1,26 +1,15 @@
 import Parser from 'rss-parser';
 import dotenv from 'dotenv';
-import { JSDOM } from 'jsdom';
-import { consola } from 'consola';
-import {
-  ALL_STATUS,
-  RATING_TEXT,
-  SeeState,
-  ReadState,
-  PlayState,
-  ListenState,
-} from './const';
-import {
-  ItemCategory,
-  ItemStatus,
-  type RSSFeedItem,
-  type FeedItem,
-} from './types';
+import {JSDOM} from 'jsdom';
+import {consola} from 'consola';
+import {ALL_STATUS, ListenState, PlayState, RATING_TEXT, ReadState, SeeState,} from './const';
+import {type FeedItem, ItemCategory, ItemStatus, type RSSFeedItem,} from './types';
 
 type ItemInfo = {
   category: ItemCategory;
   id: string;
   status: ItemStatus;
+  statusText: string;
 }
 
 dotenv.config();
@@ -53,7 +42,7 @@ export function handleRSSFeeds(feeds: RSSFeedItem[]): FeedItem[] {
     if (!itemInfo) {
       return;
     }
-    const { category, id, status } = itemInfo;
+    const {category, id, status, statusText} = itemInfo;
     const dom = new JSDOM(item.content!.trim());
     const contents = [...dom.window.document.querySelectorAll('td p')];
     const ratingElements = contents.filter((el) => el.textContent!.startsWith('推荐'));
@@ -75,6 +64,7 @@ export function handleRSSFeeds(feeds: RSSFeedItem[]): FeedItem[] {
       time: item.isoDate, // '2021-05-30T06:49:34.000Z'
       status,
       category,
+      statusText,
     } as FeedItem;
     normalizedFeeds.push(result);
   });
@@ -106,24 +96,28 @@ export function extractItemInfo(title: string, link: string): ItemInfo | undefin
         ? link.match(/movie\.douban\.com\/subject\/(\d+)\/?/)?.[1]!
         : link.match(/www\.douban\.com\/location\/drama\/(\d+)\/?/)?.[1]!,
       status: SeeState[m],
+      statusText: m,
     };
   } else if (Object.keys(ReadState).includes(m)) {
     return {
       category: ItemCategory.Book,
       id: link.match(/book\.douban\.com\/subject\/(\d+)\/?/)?.[1]!,
       status: ReadState[m],
+      statusText: m,
     };
   } else if (Object.keys(ListenState).includes(m)) {
     return {
       category: ItemCategory.Music,
       id: link.match(/music\.douban\.com\/subject\/(\d+)\/?/)?.[1]!,
       status: ListenState[m],
+      statusText: m,
     };
   } else if (Object.keys(PlayState).includes(m)) {
     return {
       category: ItemCategory.Game,
       id: link.match(/www\.douban\.com\/game\/(\d+)\/?/)?.[1]!,
       status: PlayState[m],
+      statusText: m,
     };
   }
 

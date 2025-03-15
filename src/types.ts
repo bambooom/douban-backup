@@ -30,6 +30,7 @@ export type FeedItem = {
   time: string;
   status: ItemStatus;
   category: ItemCategory;
+  statusText: string;
 };
 
 export enum NotionPropTypesEnum {
@@ -40,6 +41,7 @@ export enum NotionPropTypesEnum {
   MULTI_SELECT = 'multi_select',
   NUMBER = 'number',
   URL = 'url',
+  SELECT = "select"
 };
 
 export type NotionRichTextPropType = {
@@ -92,6 +94,13 @@ export type NotionMultiSelectPropType = {
     name: string;
   }[];
 };
+export type NotionSelectPropType = {
+  id?: string;
+  type: NotionPropTypesEnum.SELECT;
+  select: {
+    name: string;
+  }[];
+};
 
 export type NotionNumberPropType = {
   id?: string;
@@ -112,6 +121,7 @@ export type NotionColPropTypes =
   | NotionDatePropType
   | NotionMultiSelectPropType
   | NotionNumberPropType
+    | NotionSelectPropType
   | NotionUrlPropType;
 
 export type FailedItem = {

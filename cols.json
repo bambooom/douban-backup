@@ -22,5 +22,11 @@
   "RATING": "个人评分",
   "RATING_DATE": "打分日期",
   "COMMENTS": "我的短评",
-  "ITEM_LINK": "条目链接"
+  "ITEM_LINK": "条目链接",
+  "TITLE": "标题",
+  "PRODUCTION": "制片国家/地区",
+  "STATUS": "状态",
+  "MEDIA_TYPE": "影视类型",
+  "SYNOPSIS": "简介",
+  "publishDatetime": "上映日期"
 }

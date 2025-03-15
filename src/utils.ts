@@ -2,15 +2,16 @@ import dotenv from 'dotenv';
 import DB_PROPERTIES from '../cols.json';
 import {
   ItemCategory,
-  NotionPropTypesEnum,
-  type NotionRichTextPropType,
-  type NotionTitlePropType,
-  type NotionFilesPropType,
+  type NotionColPropTypes,
   type NotionDatePropType,
+  type NotionFilesPropType,
   type NotionMultiSelectPropType,
   type NotionNumberPropType,
+  NotionPropTypesEnum,
+  type NotionRichTextPropType,
+  NotionSelectPropType,
+  type NotionTitlePropType,
   type NotionUrlPropType,
-  type NotionColPropTypes,
 } from './types';
 
 dotenv.config();
@@ -118,6 +119,13 @@ export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: s
         type: NotionPropTypesEnum.URL,
         url: value,
       } as NotionUrlPropType;
+    case NotionPropTypesEnum.SELECT:
+      return {
+        type: NotionPropTypesEnum.SELECT,
+        select: {
+          name: value,
+        },
+      } as NotionSelectPropType;
     default:
       break;
   }
