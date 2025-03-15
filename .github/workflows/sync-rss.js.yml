@@ -7,8 +7,8 @@ on:
   workflow_dispatch: # manual trigger
   schedule:
     # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events
-    # Runs every 2 hours
-    - cron: '0 */2 * * *'
+    # Runs every 6 hours
+    - cron: '0 */6 * * *'
 
 jobs:
   build:
