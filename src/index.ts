@@ -1,8 +1,7 @@
-import { consola } from 'consola';
-import { fetchRSSFeeds, handleRSSFeeds } from './handle-rss';
+import {consola} from 'consola';
+import {fetchRSSFeeds, handleRSSFeeds} from './handle-rss';
 import handleNotion from './handle-notion';
 import handleNeodb from './handle-neodb';
-import { ItemStatus } from './types';
 
 async function main(): Promise<void> {
   const feeds = await fetchRSSFeeds();
@@ -12,7 +11,7 @@ async function main(): Promise<void> {
   }
 
   const normalizedFeeds = handleRSSFeeds(feeds);
-  const completeFeeds = normalizedFeeds.filter(f => f.status === ItemStatus.Complete);
+  const completeFeeds = normalizedFeeds
 
   if (completeFeeds.length) {
     await handleNotion(completeFeeds);
