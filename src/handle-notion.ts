@@ -298,7 +298,7 @@ async function updateItemToNotion(itemData: {
 
         if (response && response.id) {
             consola.success(
-                itemData[DB_PROPERTIES.NAME] +
+                itemData[DB_PROPERTIES.NAME] + ` ${itemData[DB_PROPERTIES.MEDIA_TYPE]}` +
                 `[${itemData[DB_PROPERTIES.ITEM_LINK]}]` +
                 ' page updated in Notion database.'
             );
@@ -385,7 +385,7 @@ async function addItemToNotion(itemData: {
         const response = await notion.pages.create(postData);
         if (response && response.id) {
             consola.success(
-                itemData[DB_PROPERTIES.NAME] +
+                itemData[DB_PROPERTIES.NAME] + ` ${itemData[DB_PROPERTIES.MEDIA_TYPE]}`
                 `[${itemData[DB_PROPERTIES.ITEM_LINK]}]` +
                 ' page inserted into Notion database.'
             );
