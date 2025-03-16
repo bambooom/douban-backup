@@ -54,40 +54,53 @@ export default async function handleNeodb(feeds: FeedItem[]): Promise<void> {
  */
 async function insertToNeodb(item: FeedItem): Promise<void> {
   // fetch item by douban link
-  const neodbItem = await got('https://neodb.social/api/catalog/fetch', {
-    searchParams: {
-      url: item.link,
-    },
-    headers: {
-      accept: 'application/json',
-    },
-  }).json() as NeodbItem;
-  // 条目不存在的话会被创建，但此时会返回 {message: 'Fetch in progress'}
-  if (neodbItem.uuid) {
-    try {
-      const mark = await got(
-        `https://neodb.social/api/me/shelf/item/${neodbItem.uuid}`,
-        {
-          headers: {
-            Authorization: `Bearer ${neodbToken}`,
-            accept: 'application/json',
-          },
+  consola.info('Going to fetch item: ', item.link);
+  try {
+    const neodbItem = (await got('https://neodb.social/api/catalog/fetch', {
+      searchParams: {
+        url: item.link,
+      },
+      headers: {
+        accept: 'application/json',
+      },
+    }).json()) as NeodbItem;
+    // @fix: wait NeoDB to fix this api, it changed output
+    // when item is found, it return 302 with item url, but now url is missing
+
+    // 条目不存在的话会被创建，但此时会返回 {message: 'Fetch in progress'}
+    if (neodbItem.uuid) {
+      consola.info(
+        'Going to check item status: ',
+        `${neodbItem.title}[${item.link}]`
+      );
+      try {
+        const mark = (await got(
+          `https://neodb.social/api/me/shelf/item/${neodbItem.uuid}`,
+          {
+            headers: {
+              Authorization: `Bearer ${neodbToken}`,
+              accept: 'application/json',
+            },
+          }
+        ).json()) as any;
+        if (mark.shelf_type !== item.status) {
+          // 标记状态不一样，所以更新标记
+          await markItem(neodbItem, item);
         }
-      ).json() as any;
-      if (mark.shelf_type !== item.status) {
-        // 标记状态不一样，所以更新标记
-        await markItem(neodbItem, item);
+      } catch (error) {
+        consola.error('Error code: ', error.code);
+        if (error.code === 'ERR_NON_2XX_3XX_RESPONSE') {
+          // 标记不存在，所以创建标记
+          await markItem(neodbItem, item);
+        }
       }
-    } catch (error) {
-      if (error.code === 'ERR_NON_2XX_3XX_RESPONSE') {
-        // 标记不存在，所以创建标记
-        await markItem(neodbItem, item);
-      }
+    } else {
+      // 标记不存在，等待一点时间创建标记再去标记
+      await sleep(1500);
+      await insertToNeodb(item);
     }
-  } else {
-    // 标记不存在，等待一点时间创建标记再去标记
-    await sleep(1500);
-    await insertToNeodb(item);
+  } catch (error) {
+    consola.error('Fetch item with error: ', error.code);
   }
 }
 
