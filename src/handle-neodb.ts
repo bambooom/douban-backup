@@ -64,8 +64,7 @@ async function insertToNeodb(item: FeedItem): Promise<void> {
         accept: 'application/json',
       },
     }).json()) as NeodbItem;
-    // @fix: wait NeoDB to fix this api, it changed output
-    // when item is found, it return 302 with item url, but now url is missing
+    consola.info('Fetched item: ', neodbItem);
 
     // 条目不存在的话会被创建，但此时会返回 {message: 'Fetch in progress'}
     if (neodbItem.uuid) {
