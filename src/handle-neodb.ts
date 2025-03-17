@@ -64,12 +64,15 @@ async function insertToNeodb(item: FeedItem): Promise<void> {
         accept: 'application/json',
       },
     }).json()) as NeodbItem;
-    consola.info('Fetched item: ', neodbItem);
 
-    // 条目不存在的话会被创建，但此时会返回 {message: 'Fetch in progress'}
+    // 条目不存在的话会被创建
+    // If the item is available in the catalog, HTTP 302 will be returned.
+    //    And the item's info will be redirected
+    // If the item is not available in the catalog, HTTP 202 will be returned.
+    //    and message with "Fetch in progress" and need to wait and fetch again
     if (neodbItem.uuid) {
       consola.info(
-        'Going to check item status: ',
+        'Going to check item mark status: ',
         `${neodbItem.title}[${item.link}]`
       );
       try {
@@ -84,12 +87,14 @@ async function insertToNeodb(item: FeedItem): Promise<void> {
         ).json()) as any;
         if (mark.shelf_type !== item.status) {
           // 标记状态不一样，所以更新标记
+          consola.info('Item status changed, going to update: ', `${neodbItem.title}[${item.link}]`);
           await markItem(neodbItem, item);
         }
       } catch (error) {
-        consola.error('Error code: ', error.code);
+        consola.error('Query item\'s mark with error code: ', error.code);
         if (error.code === 'ERR_NON_2XX_3XX_RESPONSE') {
           // 标记不存在，所以创建标记
+          consola.info('Item is not marked, going to mark now: ', `${neodbItem.title}[${item.link}]`);
           await markItem(neodbItem, item);
         }
       }
