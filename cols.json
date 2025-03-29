@@ -32,5 +32,6 @@
   "publishDatetime": "上映日期",
   "BOOK_DESCRIPTION": "内容简介",
   "AUTHOR_DESC": "作者简介",
-  "ORIGINAL_TITLE": "原作名"
+  "ORIGINAL_TITLE": "原作名",
+  "START_TIME": "开始时间"
 }

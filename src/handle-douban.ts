@@ -177,7 +177,7 @@ function buildBookItem(doc: Document) {
         [DB_PROPERTIES.BOOK_DESCRIPTION]: description,
         [DB_PROPERTIES.AUTHOR_DESC]: author_description,
         [DB_PROPERTIES.TRANSLATOR]: translator,
-        [DB_PROPERTIES.ORIGINAL_TITLE]: originalTitle
+        [DB_PROPERTIES.ORIGINAL_TITLE]: originalTitle,
     };
 }
 

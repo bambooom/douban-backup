@@ -67,7 +67,8 @@ export const PropertyTypeMap: Record<DB_PROPERTIES_KEYS, NotionPropTypesEnum> = 
     BOOK_DESCRIPTION: NotionPropTypesEnum.RICH_TEXT,
     AUTHOR_DESC: NotionPropTypesEnum.RICH_TEXT,
     TRANSLATOR: NotionPropTypesEnum.RICH_TEXT,
-    ORIGINAL_TITLE: NotionPropTypesEnum.RICH_TEXT
+    ORIGINAL_TITLE: NotionPropTypesEnum.RICH_TEXT,
+    START_TIME: NotionPropTypesEnum.DATE
 };
 
 export const EMOJI = {

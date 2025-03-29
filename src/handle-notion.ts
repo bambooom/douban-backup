@@ -7,7 +7,14 @@ import scrapyDouban from './handle-douban';
 import {buildPropertyValue, getDBID, sleep} from './utils';
 import {EMOJI, PropertyTypeMap} from './const';
 import DB_PROPERTIES from '../cols.json';
-import {type DB_PROPERTIES_KEYS, type FailedItem, type FeedItem, ItemCategory, type NotionUrlPropType,} from './types';
+import {
+    type DB_PROPERTIES_KEYS,
+    type FailedItem,
+    type FeedItem,
+    ItemCategory,
+    ItemStatus,
+    type NotionUrlPropType,
+} from './types';
 
 // https://github.com/makenotion/notion-sdk-js/issues/280#issuecomment-1178523498
 type EmojiRequest = Extract<CreatePageParameters['icon'], { type?: 'emoji'; }>['emoji'];
@@ -124,10 +131,16 @@ async function syncNotionDB(categorizedFeeds: FeedItem[], category: ItemCategory
     // 处理新增条目
     for (const newFeedItem of newFeeds) {
         try {
+            const pubTime = dayjs(newFeedItem.time).format('YYYY-MM-DD');
             const itemData = await scrapyDouban(newFeedItem.link, category);
             itemData[DB_PROPERTIES.ITEM_LINK] = newFeedItem.link;
             itemData[DB_PROPERTIES.RATING] = newFeedItem.rating;
-            itemData[DB_PROPERTIES.RATING_DATE] = dayjs(newFeedItem.time).format('YYYY-MM-DD');
+            if (newFeedItem.status == ItemStatus.Complete) {
+                itemData[DB_PROPERTIES.RATING_DATE] = pubTime
+            }
+            if (newFeedItem.status == ItemStatus.Wishlist) {
+                itemData[DB_PROPERTIES.START_TIME] = pubTime
+            }
             itemData[DB_PROPERTIES.COMMENTS] = newFeedItem.comment;
             itemData[DB_PROPERTIES.STATUS] = newFeedItem.statusText;
             const successful = await addItemToNotion(itemData, category);
