@@ -16,6 +16,7 @@
   "PUBLICATION_DATE": "出版日期",
   "PUBLISHING_HOUSE": "出版社",
   "WRITER": "作者",
+  "TRANSLATOR": "译者",
   "ISBN": "ISBN",
   "GAME_TITLE": "游戏名称",
   "DRAMA_TITLE": "舞台剧名称",
@@ -28,5 +29,8 @@
   "STATUS": "状态",
   "MEDIA_TYPE": "影视类型",
   "SYNOPSIS": "简介",
-  "publishDatetime": "上映日期"
+  "publishDatetime": "上映日期",
+  "BOOK_DESCRIPTION": "内容简介",
+  "AUTHOR_DESC": "作者简介",
+  "ORIGINAL_TITLE": "原作名"
 }

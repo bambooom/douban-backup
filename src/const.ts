@@ -64,6 +64,10 @@ export const PropertyTypeMap: Record<DB_PROPERTIES_KEYS, NotionPropTypesEnum> = 
     MEDIA_TYPE: NotionPropTypesEnum.SELECT,
     SYNOPSIS: NotionPropTypesEnum.RICH_TEXT,
     publishDatetime: NotionPropTypesEnum.DATE,
+    BOOK_DESCRIPTION: NotionPropTypesEnum.RICH_TEXT,
+    AUTHOR_DESC: NotionPropTypesEnum.RICH_TEXT,
+    TRANSLATOR: NotionPropTypesEnum.RICH_TEXT,
+    ORIGINAL_TITLE: NotionPropTypesEnum.RICH_TEXT
 };
 
 export const EMOJI = {

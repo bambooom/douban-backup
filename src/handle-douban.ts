@@ -118,7 +118,7 @@ function buildBookItem(doc: Document) {
     const cover = img?.title !== ImgDefaultTitle.Cover && img?.src.length <= 100 ? img?.src.replace(/\.webp$/, '.jpg') : '';
     const info = [...doc.querySelectorAll(InfoSelector)];
 
-    let writer = '', publisher = '', bookTitle = title, publishDate = '', isbn = 0;
+    let writer = '', publisher = '', bookTitle = title, publishDate = '', isbn = 0, translator = '', originalTitle = '';
     info.forEach(i => {
         const text = i.textContent?.trim() || '';
         // nextSibling 也可能是个空的 #text node
@@ -140,7 +140,7 @@ function buildBookItem(doc: Document) {
 
         } else if (text.startsWith('原作名')) {
             bookTitle = title + nextText;
-
+            originalTitle = nextText
         } else if (text.startsWith('出版年')) {
             if (/年|月|日/.test(nextText)) {
                 nextText = nextText.replace(/年|月|日/g, '-').slice(0, -1); // '2000年5月' special case
@@ -149,17 +149,35 @@ function buildBookItem(doc: Document) {
 
         } else if (text.startsWith('ISBN')) {
             isbn = Number(nextText);
+        } else if (text.startsWith('译者')) {
+            translator = i.nextElementSibling.textContent?.trim() || '';
         }
     });
-
+    let description = ''
+    let author_description = ''
+    try {
+        const intros = [...doc.querySelectorAll("div.related_info div.intro")]
+        if (intros[1].textContent?.trim().length > intros[0].textContent?.trim().length) {
+            description = intros[1].textContent.trim()
+        } else description = intros[0].textContent.trim()
+        author_description = doc.querySelector('#content > div > div.article > div.related_info > div:nth-child(8) > div > div').textContent.trim()
+    } catch (e) {
+        console.error(e)
+    }
     return {
         [DB_PROPERTIES.NAME]: title,
-        [DB_PROPERTIES.COVER]: cover, // optional
+        [DB_PROPERTIES.COVER]: cover,
+        [DB_PROPERTIES.POSTER]: cover,// optional
         [DB_PROPERTIES.WRITER]: writer, // optional
         [DB_PROPERTIES.PUBLISHING_HOUSE]: publisher, // optional
         [DB_PROPERTIES.BOOK_TITLE]: bookTitle, // optional
+        [DB_PROPERTIES.TITLE]: bookTitle,
         [DB_PROPERTIES.PUBLICATION_DATE]: publishDate, // optional
         [DB_PROPERTIES.ISBN]: isbn, // optional
+        [DB_PROPERTIES.BOOK_DESCRIPTION]: description,
+        [DB_PROPERTIES.AUTHOR_DESC]: author_description,
+        [DB_PROPERTIES.TRANSLATOR]: translator,
+        [DB_PROPERTIES.ORIGINAL_TITLE]: originalTitle
     };
 }
 
