@@ -138,7 +138,7 @@ async function syncNotionDB(categorizedFeeds: FeedItem[], category: ItemCategory
             if (newFeedItem.status == ItemStatus.Complete) {
                 itemData[DB_PROPERTIES.RATING_DATE] = pubTime
             }
-            if (newFeedItem.status == ItemStatus.Wishlist) {
+            if (newFeedItem.status == ItemStatus.Progress) {
                 itemData[DB_PROPERTIES.START_TIME] = pubTime
             }
             itemData[DB_PROPERTIES.COMMENTS] = newFeedItem.comment;
