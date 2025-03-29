@@ -53,7 +53,7 @@ export function sleep(ms: number): Promise<void> {
  * @return {any} the generated value for the property later will be sent to notion to create an item
  */
 export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: string): NotionColPropTypes | undefined {
-  switch (type) {
+   switch (type) {
     case NotionPropTypesEnum.TITLE:
       return {
         type: NotionPropTypesEnum.TITLE,
@@ -124,7 +124,7 @@ export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: s
         type: NotionPropTypesEnum.SELECT,
         select: {
           name: value,
-        },
+        }
       } as NotionSelectPropType;
     default:
       break;

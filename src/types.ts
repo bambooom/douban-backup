@@ -99,7 +99,7 @@ export type NotionSelectPropType = {
   type: NotionPropTypesEnum.SELECT;
   select: {
     name: string;
-  }[];
+  };
 };
 
 export type NotionNumberPropType = {
@@ -121,7 +121,7 @@ export type NotionColPropTypes =
   | NotionDatePropType
   | NotionMultiSelectPropType
   | NotionNumberPropType
-    | NotionSelectPropType
+  | NotionSelectPropType
   | NotionUrlPropType;
 
 export type FailedItem = {
