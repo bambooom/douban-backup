@@ -1,0 +1,26 @@
+name: Update Notion Links
+
+on:
+  workflow_dispatch:
+    inputs:
+      database_id:
+        description: 'Notion Database ID'
+        required: true
+
+jobs:
+  update-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: npm ci
+
+      - name: Run updater
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ inputs.database_id }}
+        run: npx run patch
