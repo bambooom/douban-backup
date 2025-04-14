@@ -5,7 +5,8 @@
   "exports": "./index.js",
   "type": "module",
   "scripts": {
-    "sync": "tsx src/index.ts"
+    "sync": "tsx src/index.ts",
+    "patch": "tsx src/update-notion-links.ts"
   },
   "repository": {
     "type": "git",

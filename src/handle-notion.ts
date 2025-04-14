@@ -262,8 +262,14 @@ async function updateItemToNotion(itemData: {
         keys.shift(); // remove first one NAME
         keys.forEach((key) => {
             if (itemData[DB_PROPERTIES[key]]) {
+                // 新增HTTP协议升级逻辑
+                let value = itemData[DB_PROPERTIES[key]];
+                if (key === 'ITEM_LINK' && typeof value === 'string') {
+                    value = value.replace(/^http:\/\//, 'https://');
+                }
+                
                 properties[DB_PROPERTIES[key]] = buildPropertyValue(
-                    itemData[DB_PROPERTIES[key]],
+                    value,  // 使用处理后的值
                     PropertyTypeMap[key],
                     DB_PROPERTIES[key]
                 );
@@ -414,4 +420,8 @@ async function addItemToNotion(itemData: {
         );
         return false;
     }
+}
+
+export {
+    updateItemToNotion
 }
