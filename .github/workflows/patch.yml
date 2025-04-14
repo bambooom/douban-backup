@@ -18,8 +18,14 @@ jobs:
       - name: Run movie updater
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_MOVIE_DATABASE_ID }}
-        run: npx tsx src/update-notion-links.ts
+          NOTION_MOVIE_DATABASE_ID: ${{ secrets.NOTION_MOVIE_DATABASE_ID }}
+          NOTION_MUSIC_DATABASE_ID: ${{ secrets.NOTION_MUSIC_DATABASE_ID }}
+          NOTION_BOOK_DATABASE_ID: ${{ secrets.NOTION_BOOK_DATABASE_ID }}
+          NOTION_GAME_DATABASE_ID: ${{ secrets.NOTION_GAME_DATABASE_ID }}
+          NOTION_DRAMA_DATABASE_ID: ${{ secrets.NOTION_DRAMA_DATABASE_ID }}
+          DOUBAN_USER_ID: ${{ secrets.DOUBAN_USER_ID }}
+          NEODB_API_TOKEN: ${{ secrets.NEODB_API_TOKEN }}
+        run: npm run patch-movie
   update-books-links:
     runs-on: ubuntu-latest
     steps:
@@ -34,5 +40,11 @@ jobs:
       - name: Run movie updater
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_BOOK_DATABASE_ID }}
-        run: npx tsx src/update-notion-links.ts
+          NOTION_MOVIE_DATABASE_ID: ${{ secrets.NOTION_MOVIE_DATABASE_ID }}
+          NOTION_MUSIC_DATABASE_ID: ${{ secrets.NOTION_MUSIC_DATABASE_ID }}
+          NOTION_BOOK_DATABASE_ID: ${{ secrets.NOTION_BOOK_DATABASE_ID }}
+          NOTION_GAME_DATABASE_ID: ${{ secrets.NOTION_GAME_DATABASE_ID }}
+          NOTION_DRAMA_DATABASE_ID: ${{ secrets.NOTION_DRAMA_DATABASE_ID }}
+          DOUBAN_USER_ID: ${{ secrets.DOUBAN_USER_ID }}
+          NEODB_API_TOKEN: ${{ secrets.NEODB_API_TOKEN }}
+        run: npm run patch-book
