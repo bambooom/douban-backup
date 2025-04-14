@@ -8,7 +8,7 @@ const notion = new Client({
 });
 
 async function main() {
-    const databaseId = process.env.NOTION_MOVIE_DATABASE_ID;
+    const databaseId = process.env.NOTION_DATABASE_ID;
     if (!databaseId) throw new Error('Missing NOTION_DATABASE_ID');
 
     let hasMore = true;
