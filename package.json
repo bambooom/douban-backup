@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "sync": "tsx src/index.ts",
-    "patch": "tsx src/update-notion-links.ts"
+    "patch-book": "tsx src/update-book-notion-links.ts",
+    "patch-movie": "tsx src/update-movie-notion-links.ts"
   },
   "repository": {
     "type": "git",
