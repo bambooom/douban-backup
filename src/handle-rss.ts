@@ -99,7 +99,7 @@ export function extractItemInfo(title: string, link: string): ItemInfo | undefin
   }
 
   if (Object.keys(SeeState).includes(m)) {
-    const isMovie = link.startsWith('http://movie.douban.com/');
+    const isMovie = link.startsWith('http://movie.douban.com/') || link.startsWith('https://movie.douban.com/');
     return {
       category: isMovie ? ItemCategory.Movie : ItemCategory.Drama,
       id: isMovie
