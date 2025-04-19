@@ -53,8 +53,18 @@ function buildMovieItem(doc: Document) {
         : '';
     const production = infoPl.filter(i => i.textContent.indexOf("制片国家/地区") > -1)[0].nextSibling?.textContent?.trim() || '';
 // 新增 JSON-LD 解析
+
+    // ... existing code ...
     const jsonLd = doc.querySelector('script[type="application/ld+json"]')?.textContent;
-    const datePublished = jsonLd ? JSON.parse(jsonLd)?.datePublished?.slice(0, 10) : '';
+    // 清洗JSON中的非法控制字符
+    const cleanedJson = jsonLd?.replace(/[\u0000-\u001F]/g, '') || '';  // 移除所有控制字符
+    let datePublished = ''
+    try {
+        datePublished = cleanedJson ? JSON.parse(cleanedJson)?.datePublished?.slice(0, 10) : '';
+    } catch (e) {
+        consola.error(e)
+    }
+// ... existing code ...
     const writersPl = infoPl.filter(i => i.textContent === '编剧');
     const writers = writersPl.length
         ? [...writersPl[0].nextElementSibling?.querySelectorAll('span a')!]
