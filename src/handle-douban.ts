@@ -93,7 +93,7 @@ function buildMovieItem(doc: Document) {
         [DB_PROPERTIES.IMDB_LINK]: imdbLink,
         [DB_PROPERTIES.PRODUCTION]: production,
         [DB_PROPERTIES.MEDIA_TYPE]: isTVSeries ? '电视剧' : '电影',
-        [DB_PROPERTIES.SYNOPSIS]: synopsis,
+        [DB_PROPERTIES.SYNOPSIS]: synopsis?.slice(0, 2000),
         [DB_PROPERTIES.publishDatetime]: datePublished,
     };
     return item;
@@ -168,11 +168,11 @@ function buildBookItem(doc: Document) {
     try {
         const intros = [...doc.querySelectorAll("div.related_info div.intro")]
         if (intros[1].textContent?.trim().length > intros[0].textContent?.trim().length) {
-            description = intros[1].textContent.trim()
-        } else description = intros[0].textContent.trim()
+            description = intros[1]?.textContent?.trim()?.slice(0, 2000)
+        } else description = intros[0]?.textContent?.trim()?.slice(0, 2000)
         author_description = doc.querySelector('#content > div > div.article > div.related_info > div:nth-child(8) > div > div').textContent?.trim()?.slice(0, 2000)
     } catch (e) {
-        console.error(e)
+        console.error('error: ',e)
     }
     return {
         [DB_PROPERTIES.NAME]: title,
