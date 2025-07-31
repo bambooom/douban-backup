@@ -149,7 +149,7 @@ function buildBookItem(doc: Document) {
                 : i.parentElement?.textContent?.trim() || '';
 
         } else if (text.startsWith('原作名')) {
-            bookTitle = title + nextText;
+            bookTitle = title;
             originalTitle = nextText
         } else if (text.startsWith('出版年')) {
             if (/年|月|日/.test(nextText)) {
