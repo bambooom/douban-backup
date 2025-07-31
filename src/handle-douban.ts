@@ -170,7 +170,7 @@ function buildBookItem(doc: Document) {
         if (intros[1].textContent?.trim().length > intros[0].textContent?.trim().length) {
             description = intros[1].textContent.trim()
         } else description = intros[0].textContent.trim()
-        author_description = doc.querySelector('#content > div > div.article > div.related_info > div:nth-child(8) > div > div').textContent.trim()
+        author_description = doc.querySelector('#content > div > div.article > div.related_info > div:nth-child(8) > div > div').textContent?.trim()?.slice(0, 2000)
     } catch (e) {
         console.error(e)
     }
