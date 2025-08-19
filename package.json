@@ -34,7 +34,7 @@
     "tsx": "^4.20.4"
   },
   "dependencies": {
-    "@notionhq/client": "^4.0.1",
+    "@notionhq/client": "^4.0.2",
     "consola": "^3.4.2",
     "dayjs": "^1.11.13",
     "dotenv": "^17.2.1",
