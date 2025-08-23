@@ -162,7 +162,8 @@ function buildGameItem(doc: Document) {
   const title = doc.querySelector('#wrapper #content h1')?.textContent?.trim() || '';
   const img = doc.querySelector('.item-subject-info .pic img') as HTMLImageElement;
   const cover = img?.title !== ImgDefaultTitle.Cover && img?.src.length <= 100 ? img?.src.replace(/\.webp$/, '.jpg') : '';
-  const gameInfo = doc.querySelector('#content .game-attr') as Element;
+  // attributes class name seems to have changed to `thing-attr` instead of `game-attr`
+  const gameInfo = doc.querySelector('#content .game-attr') || doc.querySelector('#content .thing-attr') as Element;
   const dts = [...gameInfo.querySelectorAll('dt')];
   const genre: string[] = [];
   let releaseDate = '';
