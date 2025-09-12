@@ -16,12 +16,12 @@ import {
 dotenv.config();
 
 /**
- * Retrieves the database ID for the given category.
+ * Retrieves the data source ID for the given category.
  *
  * @param {ItemCategory} category - The category of the item.
  * @returns {string} The corresponding database ID.
  */
-export function getDBID(category: ItemCategory): string {
+export function getDataSourceId(category: ItemCategory): string {
   const databasesMap = {
     [ItemCategory.Movie]: process.env.NOTION_MOVIE_DATABASE_ID,
     [ItemCategory.Music]: process.env.NOTION_MUSIC_DATABASE_ID,

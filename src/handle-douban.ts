@@ -55,7 +55,7 @@ function buildMovieItem(doc: Document) {
     ? [...writersPl[0].nextElementSibling?.querySelectorAll('span a')!]
       .slice(0, 5).map(i => i.textContent).join(' / ')
     : '';
-  console.log('writers: ', writers);
+
   const genre = [...doc.querySelectorAll('#info [property="v:genre"]')].map(i => i.textContent || '').filter(v => v);
   const imdbInfo = [...doc.querySelectorAll(InfoSelector)].filter(i => i.textContent?.startsWith('IMDb'));
   const imdbLink = imdbInfo.length ? 'https://www.imdb.com/title/' + imdbInfo[0].nextSibling?.textContent?.trim() : '';

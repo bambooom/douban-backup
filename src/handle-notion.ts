@@ -1,10 +1,10 @@
 import { consola } from 'consola';
 import dayjs from 'dayjs';
 import dotenv from 'dotenv';
-import { Client } from '@notionhq/client';
+import { Client, type DatabaseObjectResponse } from '@notionhq/client';
 import { type CreatePageParameters } from '@notionhq/client/build/src/api-endpoints';
 import scrapyDouban from './handle-douban';
-import { getDBID, sleep, buildPropertyValue } from './utils';
+import { getDataSourceId, sleep, buildPropertyValue } from './utils';
 import { PropertyTypeMap, EMOJI } from './const';
 import DB_PROPERTIES from '../cols.json';
 import {
@@ -22,6 +22,7 @@ dotenv.config();
 
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
+  notionVersion: '2025-09-03',
 });
 
 /**
@@ -82,16 +83,17 @@ async function syncNotionDB(categorizedFeeds: FeedItem[], category: ItemCategory
     return;
   }
 
-  const dbID = getDBID(category);
-  if (!dbID) {
-    consola.warn(`No notion database id for ${category}`);
+  const dataSourceId = getDataSourceId(category);
+  if (!dataSourceId) {
+    consola.warn(`No notion data source id for ${category}`);
     return;
   }
 
   consola.start(`Handling ${category} feeds...`);
 
+  // after @notionhq sdk upgraded to v5.0.0, use dataSource instead of database
   const queryItems = await notion.dataSources.query({
-    data_source_id: dbID,
+    data_source_id: dataSourceId,
     filter: {
       or: categorizedFeeds.map((item) => ({
         property: DB_PROPERTIES.ITEM_LINK,
@@ -179,12 +181,12 @@ async function addItemToNotion(itemData: {
       }
     });
 
-    const dbid = getDBID(category);
-    if (!dbid) {
-      throw new Error('No databse id found for category: ' + category);
+    const dataSourceId = getDataSourceId(category);
+    if (!dataSourceId) {
+      throw new Error('No data source id found for category: ' + category);
     }
 
-    const db = await notion.dataSources.retrieve({ data_source_id: dbid });
+    const db = await notion.dataSources.retrieve({ data_source_id: dataSourceId });
     const columns = Object.keys(db.properties);
     // remove cols which are not in the current database
     const propKeys = Object.keys(properties);
@@ -196,7 +198,8 @@ async function addItemToNotion(itemData: {
 
     const postData: CreatePageParameters = {
       parent: {
-        database_id: dbid,
+        type: "data_source_id",
+        data_source_id: dataSourceId,
       },
       icon: {
         type: 'emoji',
