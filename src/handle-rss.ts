@@ -60,7 +60,7 @@ export function handleRSSFeeds(feeds: RSSFeedItem[]): FeedItem[] {
     let ratingNumber = 0;
     if (ratingElements.length) {
       const rating = ratingElements[0].textContent!.replace(/^推荐: /, '').trim();
-      ratingNumber = RATING_TEXT[rating];
+      ratingNumber = RATING_TEXT[rating as keyof typeof RATING_TEXT];
     }
     const commentElements = contents.filter((el) => el.textContent!.startsWith('备注'));
     let comment = '';
@@ -105,25 +105,25 @@ export function extractItemInfo(title: string, link: string): ItemInfo | undefin
       id: isMovie
         ? link.match(/movie\.douban\.com\/subject\/(\d+)\/?/)?.[1]!
         : link.match(/www\.douban\.com\/location\/drama\/(\d+)\/?/)?.[1]!,
-      status: SeeState[m],
+      status: SeeState[m as keyof typeof SeeState],
     };
   } else if (Object.keys(ReadState).includes(m)) {
     return {
       category: ItemCategory.Book,
       id: link.match(/book\.douban\.com\/subject\/(\d+)\/?/)?.[1]!,
-      status: ReadState[m],
+      status: ReadState[m as keyof typeof ReadState],
     };
   } else if (Object.keys(ListenState).includes(m)) {
     return {
       category: ItemCategory.Music,
       id: link.match(/music\.douban\.com\/subject\/(\d+)\/?/)?.[1]!,
-      status: ListenState[m],
+      status: ListenState[m as keyof typeof ListenState],
     };
   } else if (Object.keys(PlayState).includes(m)) {
     return {
       category: ItemCategory.Game,
       id: link.match(/www\.douban\.com\/game\/(\d+)\/?/)?.[1]!,
-      status: PlayState[m],
+      status: PlayState[m as keyof typeof PlayState],
     };
   }
 

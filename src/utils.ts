@@ -94,7 +94,7 @@ export function buildPropertyValue(value: any, type: NotionPropTypesEnum, key: s
         } as NotionMultiSelectPropType
         : {
           type: NotionPropTypesEnum.MULTI_SELECT,
-          multi_select: (value || []).map(g => ({ name: g })),
+          multi_select: (value || []).map((g: string) => ({ name: g })),
         } as NotionMultiSelectPropType;
     case NotionPropTypesEnum.RICH_TEXT:
       return {

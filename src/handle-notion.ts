@@ -49,7 +49,7 @@ export default async function handleNotion(feeds: FeedItem[]): Promise<void> {
 
   for (const category in groupByCategory) {
     try {
-      const categorizedFeeds = groupByCategory[category] as FeedItem[];
+      const categorizedFeeds = groupByCategory[category as ItemCategory] as FeedItem[];
       const failed = await syncNotionDB(categorizedFeeds, category as ItemCategory);
       if (failed) {
         AllFailedItems.push(...failed);
