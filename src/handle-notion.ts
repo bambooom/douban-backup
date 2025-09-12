@@ -90,8 +90,8 @@ async function syncNotionDB(categorizedFeeds: FeedItem[], category: ItemCategory
 
   consola.start(`Handling ${category} feeds...`);
 
-  const queryItems = await notion.databases.query({
-    database_id: dbID,
+  const queryItems = await notion.dataSources.query({
+    data_source_id: dbID,
     filter: {
       or: categorizedFeeds.map((item) => ({
         property: DB_PROPERTIES.ITEM_LINK,
@@ -184,7 +184,7 @@ async function addItemToNotion(itemData: {
       throw new Error('No databse id found for category: ' + category);
     }
 
-    const db = await notion.databases.retrieve({ database_id: dbid });
+    const db = await notion.dataSources.retrieve({ data_source_id: dbid });
     const columns = Object.keys(db.properties);
     // remove cols which are not in the current database
     const propKeys = Object.keys(properties);

@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import dotenv from 'dotenv';
 import csv from 'fast-csv';
 import { Client, LogLevel } from '@notionhq/client';
-import type { QueryDatabaseResponse, PageObjectResponse, CreatePageParameters } from '@notionhq/client/build/src/api-endpoints';
+import type { QueryDataSourceResponse, PageObjectResponse, CreatePageParameters } from '@notionhq/client/build/src/api-endpoints';
 import dayjs from 'dayjs';
 import got from 'got';
 import { JSDOM } from 'jsdom';
@@ -49,8 +49,8 @@ async function main() {
   }
 
   // query current db last inserted item
-  const lastMovieItem: QueryDatabaseResponse = await notion.databases.query({
-    database_id: databaseId,
+  const lastMovieItem: QueryDataSourceResponse = await notion.dataSources.query({
+    data_source_id: databaseId,
     sorts: [
       {
         property: DB_PROPERTIES.RATING_DATE,
@@ -85,7 +85,7 @@ async function main() {
       }
 
     })
-    .on('end', async rowCount => {
+    .on('end', async (rowCount: number) => {
       console.log(`Parsed ${rowCount} rows, there are ${csvData.length} new items need to be handled.`);
       await handleNewItems();
     });
