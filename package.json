@@ -34,13 +34,13 @@
     "tsx": "^4.20.5"
   },
   "dependencies": {
-    "@notionhq/client": "^5.0.0",
+    "@notionhq/client": "^5.1.0",
     "consola": "^3.4.2",
     "dayjs": "^1.11.18",
     "dotenv": "^17.2.2",
     "fast-csv": "^5.0.5",
     "got": "^14.4.8",
-    "jsdom": "^26.1.0",
+    "jsdom": "^27.0.0",
     "rss-parser": "^3.13.0"
   }
 }
