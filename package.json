@@ -30,7 +30,7 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@types/jsdom": "^21.1.7",
+    "@types/jsdom": "^27.0.0",
     "tsx": "^4.20.6"
   },
   "dependencies": {
