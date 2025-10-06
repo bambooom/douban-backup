@@ -37,7 +37,7 @@
     "@notionhq/client": "^5.1.0",
     "consola": "^3.4.2",
     "dayjs": "^1.11.18",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "fast-csv": "^5.0.5",
     "got": "^14.4.9",
     "jsdom": "^27.0.0",
