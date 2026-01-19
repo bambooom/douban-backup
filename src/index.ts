@@ -2,6 +2,7 @@ import {consola} from 'consola';
 import {fetchRSSFeeds, handleRSSFeeds} from './handle-rss';
 import handleNotion from './handle-notion';
 import handleNeodb from './handle-neodb';
+import {closeBrowser} from './fetch-html';
 
 async function main(): Promise<void> {
   const feeds = await fetchRSSFeeds();
@@ -20,4 +21,13 @@ async function main(): Promise<void> {
   await handleNeodb(normalizedFeeds);
 }
 
-main();
+void (async () => {
+  try {
+    await main();
+  } catch (error) {
+    consola.error(error);
+    process.exitCode = 1;
+  } finally {
+    await closeBrowser();
+  }
+})();

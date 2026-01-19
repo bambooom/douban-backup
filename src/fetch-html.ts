@@ -7,6 +7,17 @@ const DEFAULT_UA =
 let browserPromise: Promise<Browser> | null = null;
 let didRegisterCloseHook = false;
 
+export async function closeBrowser(): Promise<void> {
+    if (!browserPromise) return;
+    try {
+        const browser = await browserPromise;
+        await browser.close();
+    } finally {
+        browserPromise = null;
+        didRegisterCloseHook = false;
+    }
+}
+
 async function getBrowser(): Promise<Browser> {
     if (!browserPromise) {
         browserPromise = chromium.launch({
