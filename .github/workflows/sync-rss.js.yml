@@ -37,4 +37,8 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+    - name: Install Playwright Chromium
+      run: npx playwright install --with-deps chromium
     - run: npm run sync || exit 1
