@@ -1,9 +1,9 @@
-import got from 'got';
 import {JSDOM} from 'jsdom';
 import dayjs from 'dayjs';
 import {consola} from 'consola';
 import {ItemCategory} from './types';
 import DB_PROPERTIES from '../cols.json';
+import {fetchHtmlWithBrowser} from './fetch-html';
 
 const ImgSelector = '#mainpic img';
 const ImgDefaultTitle = {
@@ -16,8 +16,8 @@ export default async function scrapyDouban(link: string, category: ItemCategory)
     [key: string]: string | string[] | number | null | undefined;
 }> {
     consola.start(`Scraping ${category} item with link: ${link}`);
-    const response = await got(link);
-    const dom = new JSDOM(response.body);
+    const html = await fetchHtmlWithBrowser(link);
+    const dom = new JSDOM(html);
     const doc = dom.window.document;
 
     switch (category) {
@@ -160,7 +160,7 @@ function buildBookItem(doc: Document) {
         } else if (text.startsWith('ISBN')) {
             isbn = Number(nextText);
         } else if (text.startsWith('译者')) {
-            translator = i.nextElementSibling.textContent?.trim() || '';
+            translator = i.nextElementSibling?.textContent?.trim() || '';
         }
     });
     let description = ''
@@ -170,7 +170,9 @@ function buildBookItem(doc: Document) {
         if (intros[1].textContent?.trim().length > intros[0].textContent?.trim().length) {
             description = intros[1]?.textContent?.trim()?.slice(0, 2000)
         } else description = intros[0]?.textContent?.trim()?.slice(0, 2000)
-        author_description = doc.querySelector('#content > div > div.article > div.related_info > div:nth-child(8) > div > div').textContent?.trim()?.slice(0, 2000)
+        author_description = doc
+            .querySelector('#content > div > div.article > div.related_info > div:nth-child(8) > div > div')
+            ?.textContent?.trim()?.slice(0, 2000) || ''
     } catch (e) {
         console.error('error: ',e)
     }
