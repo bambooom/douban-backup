@@ -6,6 +6,7 @@ import { sleep } from './utils';
 
 dotenv.config();
 const neodbToken = process.env.NEODB_API_TOKEN;
+const neodbVisibility = Number(process.env.NEODB_VISIBILITY ?? 2);
 
 type NeodbItem = {
   id: string;
@@ -125,7 +126,7 @@ async function markItem(neodbItem: NeodbItem, item: FeedItem): Promise<void> {
       },
       json: {
         shelf_type: item.status,
-        visibility: 2,
+        visibility: neodbVisibility,
         comment_text: item.comment || '',
         rating_grade: item.rating ? item.rating * 2 : 0,
         created_time: item.time,
