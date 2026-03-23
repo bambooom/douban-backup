@@ -1,24 +1,85 @@
 import got from 'got';
+import crypto from 'crypto';
+import { CookieJar } from 'tough-cookie';
 import { JSDOM } from 'jsdom';
 import dayjs from 'dayjs';
 import { consola } from 'consola';
 import { ItemCategory } from './types';
 import DB_PROPERTIES from '../cols.json';
+import { sleep } from './utils';
 
-const ImgSelector = '#mainpic img';
-const ImgDefaultTitle = {
-  Poster: '点击看更多海报',
-  Cover: '点击上传封面图片',
-};
-const InfoSelector = '#info span.pl';
+// 创建一个持久化的 CookieJar 实例，建议放在函数外部以维持会话
+const cookieJar = new CookieJar();
+
+// 辅助函数：解 PoW 难题
+async function solveDoubanPoW(html: string) {
+  const dom = new JSDOM(html);
+  const doc = dom.window.document;
+
+  const tok = (doc.querySelector('#tok') as HTMLInputElement)?.value;
+  const cha = (doc.querySelector('#cha') as HTMLInputElement)?.value;
+  const red = (doc.querySelector('#red') as HTMLInputElement)?.value;
+
+  if (!tok || !cha) return null;
+
+  let nonce = 0;
+  const difficulty = 4;
+  const target = '0'.repeat(difficulty);
+
+  // 开始挖矿
+  while (true) {
+    nonce++;
+    const hash = crypto.createHash('sha512').update(cha + nonce).digest('hex');
+    if (hash.startsWith(target)) break;
+  }
+
+  return { tok, cha, sol: nonce, red };
+}
 
 export default async function scrapyDouban(link: string, category: ItemCategory): Promise<{
     [key: string]: string | string[] | number | null | undefined;
 }> {
   consola.start(`Scraping ${category} item with link: ${link}`);
-  const response = await got(link);
+
+  // 3. 配置通用的 got 客户端, fake user-agent
+  const client = got.extend({
+    cookieJar,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': link,
+    },
+    followRedirect: true
+  });
+
+  let response = await client(link);
+
+  // 4. 检查是否命中了 PoW 挑战页
+  if (response.body.includes('id="sec"') && response.body.includes('sha512')) {
+    consola.info('Detected Douban PoW challenge, solving...');
+    const payload = await solveDoubanPoW(response.body);
+
+    if (payload) {
+      // 添加随机延迟更保险 600ms~1200ms
+      const delay = Math.floor(Math.random() * 600) + 600;
+      await sleep(delay);
+      // 提交验证表单
+      await client.post('https://sec.douban.com/c', {
+        form: payload
+      });
+      consola.success('PoW solved and submitted. Retrying original request...');
+
+      // 验证通过后，带上新 Cookie 重新请求
+      response = await client(link);
+    }
+  }
+
   const dom = new JSDOM(response.body);
   const doc = dom.window.document;
+
+  // 检查是否依然在验证页（可能 IP 被彻底封禁或验证失败）
+  if (doc.querySelector('#sec')) {
+    throw new Error('Failed to bypass Douban security page. Might need a proxy or manual login.');
+  }
 
   switch (category) {
     case ItemCategory.Movie:
@@ -35,6 +96,13 @@ export default async function scrapyDouban(link: string, category: ItemCategory)
       return {}
   }
 }
+
+const ImgSelector = '#mainpic img';
+const ImgDefaultTitle = {
+  Poster: '点击看更多海报',
+  Cover: '点击上传封面图片',
+};
+const InfoSelector = '#info span.pl';
 
 function buildMovieItem(doc: Document) {
   const title = doc.querySelector('#content h1 [property="v:itemreviewed"]')?.textContent?.trim() || '';
