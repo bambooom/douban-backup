@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@types/jsdom": "^30.0.0",
-    "tsx": "^4.23.11"
+    "tsx": "^4.23.12"
   },
   "dependencies": {
     "@notionhq/client": "^5.24.0",
