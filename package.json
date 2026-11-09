@@ -42,6 +42,6 @@
     "got": "^16.2.0",
     "jsdom": "^31.0.0",
     "rss-parser": "^3.13.0",
-    "tough-cookie": "^6.0.2"
+    "tough-cookie": "^6.1.0"
   }
 }
